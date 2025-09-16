@@ -1,0 +1,32 @@
+[project]
+name = "mxm-config"
+version = "0.1.0"
+description = "MXM configuration loader and context resolver"
+authors = [
+  { name = "mxm", email = "contact@moneyexmachina.com" }
+]
+license = { text = "MIT" }
+readme = "README.md"
+requires-python = ">=3.12"
+
+dependencies = [
+  "omegaconf>=2.3.0,<3.0.0"
+]
+
+[tool.poetry]
+packages = [
+  { include = "mxm_config" },
+]
+include = [
+  "mxm_config/examples/demo_config/*.yaml"
+]
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.13.0"
+black = "^25.1.0"
+isort = "^6.0.1"
+ipython = "^9.5.0"
+pytest = "^8.4.2"
+
+[build-system]
+requires = ["poetry-core>=2.0.0"]
+build-backend = "poetry.core.masonry.api"

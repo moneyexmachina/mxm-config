@@ -1,0 +1,5 @@
+project: "mxm-config demo"
+version: "0.1.0"
+parameters:
+  refresh_interval: "5min"
+  sample_count: 42
