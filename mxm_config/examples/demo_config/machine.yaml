@@ -1,0 +1,11 @@
+bridge:
+  paths:
+    base_output: "/Users/mxm/demo_output"
+
+wildling:
+  paths:
+    base_output: "/mnt/wildling/demo_output"
+
+monolith:
+  paths:
+    base_output: "/srv/monolith/demo_output"

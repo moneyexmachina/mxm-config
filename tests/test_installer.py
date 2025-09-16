@@ -1,54 +1,66 @@
 import os
+import shutil
 from pathlib import Path
 
 import pytest
 
-from mxm_config.initializer import initiate_mxm_configs
-from mxm_config.installer import install_default, install_templates
-from mxm_config.resolver import get_config_root
+from mxm_config.installer import install_all
 
 
-@pytest.fixture(autouse=True)
-def temp_config_root(monkeypatch, tmp_path):
-    """
-    Redirect MXM_CONFIG_HOME to a temp directory for all installer tests.
-    """
-    monkeypatch.setenv("MXM_CONFIG_HOME", str(tmp_path))
-    # Ensure base dir exists
-    initiate_mxm_configs()
-    yield tmp_path
+def test_install_all_copies_core_files(tmp_path):
+    package = "mxm_config.examples.demo_config"
+
+    installed = install_all(package, target_root=tmp_path)
+
+    # All 5 core YAMLs may not exist in demo_config,
+    # but default.yaml definitely should
+    expected_core = {"default.yaml"}
+    installed_names = {p.name for p in installed}
+    assert expected_core.issubset(installed_names)
+
+    # Verify files exist at target location
+    for name in expected_core:
+        assert (tmp_path / "demo_config" / name).exists()
 
 
-def test_install_default_first_time(temp_config_root):
-    path = install_default("mxm_config.examples.demo_config")
-    assert path.exists()
-    assert path.read_text().startswith('project: "mxm-config demo"')
+def test_install_all_respects_overwrite(tmp_path):
+    package = "mxm_config.examples.demo_config"
 
-
-def test_install_default_skip_existing(temp_config_root):
     # First install
-    path1 = install_default("mxm_config.examples.demo_config")
-    # Modify file to simulate user edit
-    path1.write_text("modified: true")
-    # Second install without force
-    path2 = install_default("mxm_config.examples.demo_config", force=False)
-    # Should not overwrite
-    assert "modified" in path2.read_text()
+    install_all(package, target_root=tmp_path)
+
+    dst = tmp_path / "demo_config" / "default.yaml"
+    original = dst.read_text()
+
+    # Change the file locally
+    dst.write_text("modified: true\n")
+
+    # Run install again with overwrite=False (default)
+    install_all(package, target_root=tmp_path, overwrite=False)
+    assert dst.read_text() == "modified: true\n"
+
+    # Run install with overwrite=True
+    install_all(package, target_root=tmp_path, overwrite=True)
+    assert dst.read_text() == original
 
 
-def test_install_default_force_overwrites(temp_config_root):
-    path = install_default("mxm_config.examples.demo_config")
-    path.write_text("modified: true")
-    path2 = install_default("mxm_config.examples.demo_config", force=True)
-    # Should have original demo contents again
-    assert 'project: "mxm-config demo"' in path2.read_text()
+def test_install_all_templates(tmp_path):
+    """If demo_config ever ships templates/, they should be installed."""
+    package = "mxm_config.examples.demo_config"
 
+    # Manually create a fake templates dir in package resources
+    # For test isolation, copy it into tmp_path
+    # Simulating what a real package would ship
+    pkg_path = Path(__file__).parents[1] / "mxm_config" / "examples" / "demo_config"
+    templates_dir = pkg_path / "templates"
+    templates_dir.mkdir(exist_ok=True)
+    fake_yaml = templates_dir / "example.yaml"
+    fake_yaml.write_text("fake: true\n")
 
-def test_install_templates(temp_config_root):
-    paths = install_templates("mxm_config.examples.demo_config", force=True)
-    # If demo_config has no templates yet, this will be empty
-    assert isinstance(paths, list)
-    for p in paths:
-        assert p.exists()
-        assert p.suffix == ".yaml"
-        assert str(p).startswith(str(get_config_root()))
+    installed = install_all(package, target_root=tmp_path, overwrite=True)
+    tmpl_root = tmp_path / "demo_config" / "templates"
+    assert any(p.name == "example.yaml" for p in installed)
+    assert (tmpl_root / "example.yaml").exists()
+
+    # Cleanup (so we don’t pollute repo)
+    shutil.rmtree(templates_dir)
