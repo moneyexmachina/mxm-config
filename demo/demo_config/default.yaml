@@ -1,0 +1,10 @@
+project: "mxm-config demo"
+version: "0.1.0"
+
+paths:
+  output: "${paths.base_output}/${mxm_env}/${mxm_profile}"
+  logs: "${paths.base_output}/logs/${mxm_env}"
+
+parameters:
+  refresh_interval: "5min"
+  sample_count: 10

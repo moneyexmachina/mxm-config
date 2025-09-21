@@ -1,0 +1,9 @@
+dev:
+  parameters:
+    sample_count: 1
+    refresh_interval: "1min"
+
+prod:
+  parameters:
+    sample_count: 100
+    refresh_interval: "10min"
