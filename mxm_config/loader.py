@@ -1,103 +1,139 @@
-"""
-mxm_config.loader
-
-Loads hierarchical YAML config files from ~/.config/mxm/<config_path>.
-
-Config layering (in increasing order of precedence):
-1. default.yaml
-2. env/<env>.yaml         (e.g., "dev", "prod")
-3. machine/<machine>.yaml (e.g., "bridge", "wildling")
-4. profile/<profile>.yaml (e.g., "backtest", "live")
-5. programmatic overrides (dict passed in)
-
-All configs are merged using OmegaConf and optionally frozen.
-
-Usage:
-    from mxm_config.loader import load_config
-
-    cfg = load_config(
-        config_path="my_module",
-        env="dev",
-        machine="bridge",
-        profile="backtest",
-        overrides={"foo": "bar"},
-        freeze=True,
-    )
-"""
-
-import os
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Optional
+from typing import Any, Callable, Union
 
-from omegaconf import OmegaConf
+from omegaconf import DictConfig, ListConfig, OmegaConf
+
+from mxm_config.resolver import (
+    get_config_root,
+    resolve_environment,
+    resolve_machine,
+    resolve_profile,
+)
+
+Layer = Union[ListConfig, DictConfig]
 
 
 def load_config(
-    config_path: str,
-    *,
-    env: Optional[str] = None,
-    machine: Optional[str] = None,
-    profile: Optional[str] = None,
-    overrides: Optional[dict] = None,
-    freeze: bool = True,
-) -> OmegaConf:
+    package: str,
+    env: str,
+    profile: str,
+    machine: str | None = None,
+    root: Path | None = None,
+    overrides: Mapping[str, Any] | None = None,
+) -> DictConfig:
     """
-    Load a hierarchical configuration from ~/.config/mxm/<config_path>.
+    Load the MXM configuration by composing layered YAML files.
+
+    The configuration directory is determined by combining the MXM config root
+    (``~/.config/mxm`` by default, or overridden by ``MXM_CONFIG_HOME``) and
+    the given ``package`` name (e.g. ``demo``). This directory is populated
+    when configs are installed using :func:`install_all`.
+
+    Layers are merged in the following order (lowest → highest precedence):
+
+        1. ``default.yaml``          — always applied if present
+        2. ``environment.yaml``      — only the block matching ``env`` is applied
+        3. ``machine.yaml``          — only the block matching current hostname
+        4. ``profile.yaml``          — only the block matching ``profile``
+        5. ``local.yaml``            — applied if present
+        6. explicit overrides dict   — passed via ``overrides`` argument
 
     Args:
-        config_path: Relative path from ~/.config/mxm/ (e.g., "my_module")
-        env: Optional environment (e.g., "dev", "prod")
-        machine: Optional machine id (e.g., "bridge", "wildling")
-        profile: Optional profile name (e.g., "live", "backtest")
-        overrides: Optional dictionary to override any config values
-        freeze: Whether to make the resulting config read-only
+        package: Name of the config subdirectory under the MXM config root.
+        env: Environment selector (e.g. ``"dev"``, ``"prod"``).
+        profile: Profile selector (e.g. ``"default"``, ``"research"``).
+        machine: Optional explicit machine name override.
+        root: Optional config root path override.
+        overrides: Optional dictionary of overrides applied last.
 
     Returns:
-        A composed OmegaConf config object.
+        OmegaConf: A frozen OmegaConf config object with all layers
+        merged and interpolated.
     """
-    base_dir = Path.home() / ".config" / "mxm" / config_path
-    merged_cfgs = []
+    base_root = Path(root) if root is not None else get_config_root()
+    cfg_root = base_root / Path(str(package))
 
-    def load_if_exists(path: Path) -> Optional[OmegaConf]:
-        if path.exists():
-            return OmegaConf.load(path)
+    context_cfg = OmegaConf.create(
+        {
+            "mxm_env": resolve_environment(env),
+            "mxm_profile": resolve_profile(profile),
+            "mxm_machine": resolve_machine(machine),
+        }
+    )
+    layers: list[Layer] = [context_cfg]
+
+    default_cfg = _load_yaml_if_exists(cfg_root / "default.yaml")
+    if default_cfg:
+        layers.append(default_cfg)
+
+    env_cfg = _load_block(env, cfg_root / "environment.yaml", resolve_environment)
+    if env_cfg:
+        layers.append(env_cfg)
+
+    machine_cfg = _load_block(machine, cfg_root / "machine.yaml", resolve_machine)
+    if machine_cfg:
+        layers.append(machine_cfg)
+
+    profile_cfg = _load_block(
+        profile, cfg_root / "profile.yaml", resolve_profile, allow_default_skip=True
+    )
+    if profile_cfg:
+        layers.append(profile_cfg)
+
+    local_cfg = _load_yaml_if_exists(cfg_root / "local.yaml")
+    if local_cfg:
+        layers.append(local_cfg)
+
+    if overrides is not None:
+        overrides_cfg: DictConfig = OmegaConf.create(dict(overrides))
+        layers.append(overrides_cfg)
+
+    merged: DictConfig = OmegaConf.merge(*layers)  # type: ignore[assignment]
+    OmegaConf.resolve(merged)
+    OmegaConf.set_readonly(merged, True)
+    return merged
+
+
+def _load_block(
+    selector: str | None,
+    path: Path,
+    resolver: Callable[[str | None], str],
+    allow_default_skip: bool = False,
+) -> DictConfig | None:
+    """
+    Resolve and load a configuration block from a YAML file.
+
+    Args:
+        selector: Raw selector value (e.g. env, profile, machine).
+        path: Path to the YAML file.
+        resolver: Function to normalize the selector.
+        allow_default_skip: If True, missing "default" selector will return None
+            instead of raising KeyError (used for profiles).
+
+    Returns:
+        DictConfig block for the selector, or None if skipped.
+
+    Raises:
+        KeyError: If YAML exists but selector not defined.
+    """
+    resolved = resolver(selector)
+
+    if not path.exists():
         return None
 
-    # 1. Load default.yaml (required)
-    default_path = base_dir / "default.yaml"
-    if not default_path.exists():
-        raise FileNotFoundError(f"Missing required config file: {default_path}")
-    merged_cfgs.append(OmegaConf.load(default_path))
+    cfg: DictConfig = OmegaConf.load(path)  # type: ignore[assignment]
 
-    # 2. Optional env/<env>.yaml
-    env = env or os.getenv("MXM_ENV")
-    if env:
-        cfg = load_if_exists(base_dir / "env" / f"{env}.yaml")
-        if cfg:
-            merged_cfgs.append(cfg)
+    if resolved in cfg:
+        return cfg[resolved]  # type: ignore[index]
+    elif allow_default_skip and resolved == "default":
+        return None
+    else:
+        raise KeyError(
+            f"Selector '{resolved}' not found in {path}. Available: {list(cfg.keys())}"
+        )
 
-    # 3. Optional machine/<machine>.yaml
-    machine = machine or os.getenv("MXM_MACHINE")
-    if machine:
-        cfg = load_if_exists(base_dir / "machine" / f"{machine}.yaml")
-        if cfg:
-            merged_cfgs.append(cfg)
 
-    # 4. Optional profile/<profile>.yaml
-    profile = profile or os.getenv("MXM_PROFILE")
-    if profile:
-        cfg = load_if_exists(base_dir / "profile" / f"{profile}.yaml")
-        if cfg:
-            merged_cfgs.append(cfg)
-
-    # 5. Optional programmatic overrides
-    if overrides:
-        merged_cfgs.append(OmegaConf.create(overrides))
-
-    # Merge all layers in order
-    config = OmegaConf.merge(*merged_cfgs)
-
-    if freeze:
-        OmegaConf.set_readonly(config, True)
-
-    return config
+def _load_yaml_if_exists(path: Path):
+    """Load a YAML file into an OmegaConf config if it exists, else return None."""
+    return OmegaConf.load(path) if path.exists() else None

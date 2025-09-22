@@ -1,8 +1,0 @@
-research:
-  parameters:
-    refresh_interval: "30min"
-
-trading:
-  parameters:
-    refresh_interval: "5s"
-    sample_count: 999

@@ -1,13 +1,11 @@
-import os
 from pathlib import Path
 
 import pytest
 
 from mxm_config.initializer import initiate_mxm_configs
-from mxm_config.resolver import get_config_root
 
 
-def test_initiate_with_argument_creates(tmp_path):
+def test_initiate_with_argument_creates(tmp_path: Path) -> None:
     target = tmp_path / "explicit"
     assert not target.exists()
     result = initiate_mxm_configs(config_root=target, create_if_missing=True)
@@ -15,7 +13,7 @@ def test_initiate_with_argument_creates(tmp_path):
     assert target.exists()
 
 
-def test_initiate_with_envvar(monkeypatch, tmp_path):
+def test_initiate_with_envvar(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     env_target = tmp_path / "envroot"
     monkeypatch.setenv("MXM_CONFIG_HOME", str(env_target))
     # Ensure other fallbacks don’t interfere
@@ -27,7 +25,9 @@ def test_initiate_with_envvar(monkeypatch, tmp_path):
     assert env_target.exists()
 
 
-def test_initiate_with_default_home(monkeypatch, tmp_path):
+def test_initiate_with_default_home(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     # Clear explicit overrides so we hit the default branch
     monkeypatch.delenv("MXM_CONFIG_HOME", raising=False)
     monkeypatch.delenv("XDG_CONFIG_HOME", raising=False)
@@ -42,7 +42,9 @@ def test_initiate_with_default_home(monkeypatch, tmp_path):
     assert expected.exists()
 
 
-def test_initiate_without_creation(tmp_path, monkeypatch):
+def test_initiate_without_creation(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     # Ensure no overrides in play
     monkeypatch.delenv("MXM_CONFIG_HOME", raising=False)
     monkeypatch.delenv("XDG_CONFIG_HOME", raising=False)

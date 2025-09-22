@@ -71,5 +71,7 @@ def resolve_machine(machine: str | None = None) -> str:
     env_machine = os.getenv("MXM_MACHINE")
     if env_machine:
         return env_machine
-
-    return socket.gethostname()
+    hostname = socket.gethostname().lower()
+    if hostname.endswith(".local"):
+        hostname = hostname[:-6]
+    return hostname
