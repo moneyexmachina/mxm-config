@@ -1,5 +1,10 @@
 # mxm-config
 
+![Version](https://img.shields.io/github/v/release/moneyexmachina/mxm-config)
+![License](https://img.shields.io/github/license/moneyexmachina/mxm-config)
+![Python](https://img.shields.io/badge/python-3.12+-blue)
+[![Checked with pyright](https://microsoft.github.io/pyright/img/pyright_badge.svg)](https://microsoft.github.io/pyright/)
+
 ## Purpose
 
 `mxm-config` provides a unified way to **install, load, layer, and resolve configuration** across all Money Ex Machina (MXM) packages and applications.  
