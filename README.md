@@ -2,8 +2,8 @@
 
 ## Purpose
 
-`mxm-config` provides a unified way to **load, layer, and resolve configuration** across all Money Ex Machina (MXM) packages and applications.  
-It separates configuration from secrets and runtime metadata, enforces deterministic layering, and ensures that every run has a transparent, reproducible view of its operating context.
+`mxm-config` provides a unified way to **install, load, layer, and resolve configuration** across all Money Ex Machina (MXM) packages and applications.  
+It separates configuration from secrets and runtime metadata, enforces deterministic layering, and ensures every run has a transparent, reproducible view of its operating context.
 
 ---
 
@@ -12,15 +12,15 @@ It separates configuration from secrets and runtime metadata, enforces determini
 - **Separation of concerns**  
   - Configuration ≠ secrets ≠ runtime.  
   - Secrets are handled by [`mxm-secrets`](https://github.com/moneyexmachina/mxm-secrets).  
-  - Runtime metadata is handled by `mxm-runtime` (planned).  
+  - Runtime metadata will be handled by `mxm-runtime` (planned).  
 
 - **Determinism**  
   - Configuration is layered in a fixed, documented order.  
-  - Reproducible runs: the same context produces the same resolved config.  
+  - Reproducible runs: the same context always produces the same resolved config.  
 
 - **Transparency**  
   - Configs are plain YAML files, no hidden state.  
-  - Merging behavior is explicit and traceable.  
+  - Merging order is explicit and testable.  
 
 - **Extensibility**  
   - Layers are minimal and orthogonal.  
@@ -30,95 +30,92 @@ It separates configuration from secrets and runtime metadata, enforces determini
 
 ## Configuration Layers
 
-At runtime, configuration is resolved by merging up to five layers in order of precedence:
+At runtime, configuration is resolved by merging up to six layers in order of precedence (lowest → highest):
 
 1. **`default.yaml`**  
-   Baseline shipped with the package. Minimal but valid.  
+   Baseline shipped with the package.  
    *Always present.*
 
 2. **`environment.yaml`**  
-   Deployment mode (`dev`, `staging`, `prod`).  
-   Captures broad operational context.
+   Deployment mode (`dev`, `prod`, …).  
+   Each environment is a block inside this file.
 
 3. **`machine.yaml`**  
    Host-specific overrides (paths, mounts, resources).  
-   Example: different data root for laptop vs server.
 
 4. **`profile.yaml`**  
-   Role or user context (`research`, `production`, `public`).  
-   Determines scope and feature availability.
+   Role or user context (`research`, `trading`, …).  
 
-5. **`overrides.yaml`**  
+5. **`local.yaml`**  
    Local scratchpad for ad-hoc tweaks.  
-   *Not intended for version control.*
+   *Ignored by version control.*
 
-⚠️ Only **one file per layer** is active in `~/.config/mxm/<package>/`.  
-If you want multiple variants (e.g. `dev.yaml` and `prod.yaml`), keep them under `templates/` and copy the one you need into place.
-
----
-
-## Installation of Configs
-
-`mxm-config` provides an installer that copies package-provided configs into the user’s config root (`~/.config/mxm/` by default, override with `$MXM_CONFIG_HOME`).
-
-- **Defaults**  
-  ```python
-  from mxm_config.installer import install_default
-  install_default("mxm_config.examples.demo_config")
-  ```
-  Installs:  
-  ```
-  ~/.config/mxm/demo_config/default.yaml
-  ```
-
-- **Templates**  
-  ```python
-  from mxm_config.installer import install_templates
-  install_templates("mxm_config.examples.demo_config")
-  ```
-  Installs:  
-  ```
-  ~/.config/mxm/demo_config/templates/*.yaml
-  ```
+6. **Explicit overrides (dict)**  
+   Passed directly in code, applied last.
 
 ---
 
-## Usage in Code
+## Installing Configs
+
+Use the installer to copy package-shipped configs into the user’s config root (`~/.config/mxm/` by default, override with `$MXM_CONFIG_HOME`).
+
+```python
+from mxm_config.installer import install_all
+
+install_all("mxm_config.examples.demo_config", target_name="demo")
+```
+
+This creates:
+
+```
+~/.config/mxm/demo/default.yaml
+~/.config/mxm/demo/environment.yaml
+~/.config/mxm/demo/machine.yaml
+~/.config/mxm/demo/profile.yaml
+~/.config/mxm/demo/local.yaml
+```
+
+Any `templates/*.yaml` files shipped with the package will also be installed under `~/.config/mxm/<package>/templates/`.
+
+---
+
+## Loading Configs
 
 ```python
 from mxm_config.loader import load_config
 
-cfg = load_config("demo_config")
+cfg = load_config("demo", env="dev", profile="research")
+
 print(cfg.parameters.refresh_interval)
+print(cfg.paths.output)
 ```
 
-By default, configs are read-only. Override behavior with `force` flags in the installer, or by editing `overrides.yaml`.
+- Context (`mxm_env`, `mxm_profile`, `mxm_machine`) is injected automatically.  
+- All `${...}` interpolations are resolved before returning.  
+- The returned config is read-only by default.
 
 ---
 
-## Example Package (`demo_config`)
+## Example Package
 
-The repository ships a minimal demo package:
+The repo ships a minimal demo package: `mxm_config/examples/demo_config`
 
 - `default.yaml` → valid baseline  
-- `config_templates/environment.yaml` → dev/prod example  
-- `config_templates/machine.yaml` → host paths/resources  
-- `config_templates/profile.yaml` → role-specific example  
-- `config_templates/overrides.yaml` → local tweaks  
+- `environment.yaml` → defines `dev` and `prod`  
+- `machine.yaml` → overrides per host (`bridge`, `wildling`, `monolith`)  
+- `profile.yaml` → defines `research`, `trading`  
+- `local.yaml` → local overrides (optional, not versioned)
 
-This serves as a test case for installers and loaders.
+This serves as a test fixture for installers and loaders.
 
 ---
 
 ## Testing
 
-- Config root defaults to `~/.config/mxm/`.  
-- Override with `$MXM_CONFIG_HOME` during tests.  
-- Pytest suite included.  
-  - Uses `monkeypatch` to redirect config root into a temp directory.  
-  - Ensures functions respect layering and skip/overwrite semantics.
+Tests use `pytest` with `monkeypatch` to isolate config roots and hostnames.
 
-Run tests with:
+Run with:
+
 ```bash
 poetry run pytest
 ```
@@ -127,9 +124,10 @@ poetry run pytest
 
 ## Roadmap
 
-- Schema validation (e.g. `omegaconf.structured`)  
-- CLI tool (`mxm-config install demo_config`)  
-- Integration with `mxm-runtime` for provenance  
+- Config schema validation (via `omegaconf.structured` or pydantic)  
+- CLI tool (`mxm-config install demo`)  
+- Environment variable overrides → auto-mapped into overrides dict  
+- Integration with `mxm-runtime` for provenance tracking  
 - Config hashing for reproducibility and auditability  
 
 ---
@@ -137,4 +135,3 @@ poetry run pytest
 ## License
 
 MIT License. See [LICENSE](LICENSE).
-
