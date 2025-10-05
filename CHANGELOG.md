@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## v0.2.0 — 2025-10-05
+### Added
+- Automatic registration of standard MXM resolvers (`cwd`, `home`, `env`, `timestamp`)  
+  on package import for all MXM packages.
+- Exposed `install_all` and `load_config` as top-level API functions in `__all__`.
+
+### Notes
+- Resolvers use the `${name:}` syntax (with trailing colon) under OmegaConf ≥2.3.
+- `register_mxm_resolvers()` now runs automatically when importing `mxm_config`.
+
 ## [0.1.0] - 2025-09-22
 ### Added
 - Initial release of **mxm-config**.
