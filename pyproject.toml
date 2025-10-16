@@ -1,31 +1,32 @@
-[project]
+[tool.poetry]
 name = "mxm-config"
 version = "0.2.2"
 description = "MXM configuration loader and context resolver"
-authors = [
-  { name = "mxm", email = "contact@moneyexmachina.com" }
-]
-license = { text = "MIT" }
+authors = ["mxm <contact@moneyexmachina.com>"]
+license = "MIT"
 readme = "README.md"
-requires-python = ">=3.12"
+homepage = "https://github.com/moneyexmachina/mxm-config"
+repository = "https://github.com/moneyexmachina/mxm-config"
+keywords = ["mxm", "configuration", "omegaconf", "settings"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3 :: Only",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
+  "Typing :: Typed",
 ]
-dependencies = [
-  "omegaconf>=2.3.0,<3.0.0"
-]
-documentation = "https://github.com/moneyexmachina/mxm-config"
-[tool.poetry]
-packages = [
-  { include = "mxm_config" },
-]
+
+packages = [{ include = "mxm_config" }]
 include = [
   "mxm_config/examples/demo_config/*.yaml",
-  "mxm_config/py.typed"
+  "mxm_config/py.typed",
 ]
+
+[tool.poetry.dependencies]
+python = ">=3.12,<4.0"
+omegaconf = ">=2.3.0,<3.0.0"
+
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.13.0"
 black = "^25.1.0"
@@ -37,19 +38,12 @@ pytest = "^8.4.2"
 requires = ["poetry-core>=2.0.0"]
 build-backend = "poetry.core.masonry.api"
 
-# -------------------------
-# Coding standards
-# -------------------------
-
 [tool.ruff]
 line-length = 88
 target-version = "py312"
-# Select rulesets; expand gradually if desired
 select = ["E", "F", "B", "ANN"]
 ignore = ["ANN101", "ANN102"]
-# Exclude common non-source dirs
 exclude = ["build", "dist", ".venv"]
-
 
 [tool.black]
 line-length = 88
@@ -63,7 +57,7 @@ known_third_party = ["omegaconf"]
 combine_as_imports = true
 
 [tool.pyright]
-typeCheckingMode = "strict"            # or "strict" if you want more enforcement
+typeCheckingMode = "strict"
 include = ["mxm_config"]
 exclude = ["build", "dist", "docs", ".venv"]
 pythonVersion = "3.12"

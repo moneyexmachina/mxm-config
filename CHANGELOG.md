@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## v0.2.3 — 2025-10-16
+### Changed
+- Normalized packaging metadata to Poetry-native layout:
+  - Moved project metadata from `[project]` to `[tool.poetry]`.
+  - Declared `python` constraint under `[tool.poetry.dependencies]`.
+  - Added `Typing :: Typed` classifier and ensured `py.typed` is included.
+- No runtime code changes.
+
+### Notes
+- This release improves build/publish consistency for PyPI and avoids mixed metadata sources.
+
 ## v0.2.2 — 2025-10-16
 ### Added
 - `make_subconfig(data: Mapping[str, Any], *, readonly=True, resolve=False) -> MXMConfig`  
