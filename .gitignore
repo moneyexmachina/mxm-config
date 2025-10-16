@@ -23,3 +23,8 @@ htmlcov/
 
 # macOS
 .DS_Store
+
+# Python build artifacts
+dist/
+build/
+*.egg-info/
