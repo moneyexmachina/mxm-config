@@ -1,6 +1,6 @@
 [project]
 name = "mxm-config"
-version = "0.2.0"
+version = "0.2.1"
 description = "MXM configuration loader and context resolver"
 authors = [
   { name = "mxm", email = "contact@moneyexmachina.com" }
@@ -23,7 +23,8 @@ packages = [
   { include = "mxm_config" },
 ]
 include = [
-  "mxm_config/examples/demo_config/*.yaml"
+  "mxm_config/examples/demo_config/*.yaml",
+  "mxm_config/py.typed"
 ]
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.13.0"

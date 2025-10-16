@@ -1,6 +1,34 @@
+"""
+Configuration loader for MXM apps (layered OmegaConf).
+
+This module composes the final, read-only configuration object for a given
+`package` by merging a standard set of YAML layers located under the MXM
+config root (e.g., `~/.config/mxm/<package>`). Layering order is stable and
+well-defined (low → high precedence):
+
+  1) default.yaml               — always applied if present
+  2) environment.yaml[env]      — the block matching the resolved environment
+  3) machine.yaml[machine]      — the block matching the resolved machine/host
+  4) profile.yaml[profile]      — the block matching the resolved profile
+  5) local.yaml                 — optional, for developer overrides
+  6) overrides (in-memory)      — explicit dict passed to `load_config(...)`
+
+Resolution helpers in `mxm_config.resolver` normalize `env`, `profile`, and
+`machine` (e.g., deriving defaults from environment variables or hostname).
+
+The resulting OmegaConf DictConfig is:
+  - fully resolved (interpolations evaluated),
+  - merged according to the order above,
+  - and set to read-only.
+
+Downstream packages should generally import `load_config` via
+`mxm_config.__init__` and type against the `MXMConfig` protocol instead of
+depending on OmegaConf directly.
+"""
+
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Callable, Union
+from typing import Any, Callable, Union, cast
 
 from omegaconf import DictConfig, ListConfig, OmegaConf
 
@@ -10,6 +38,7 @@ from mxm_config.resolver import (
     resolve_machine,
     resolve_profile,
 )
+from mxm_config.types import MXMConfig
 
 Layer = Union[ListConfig, DictConfig]
 
@@ -21,7 +50,7 @@ def load_config(
     machine: str | None = None,
     root: Path | None = None,
     overrides: Mapping[str, Any] | None = None,
-) -> DictConfig:
+) -> MXMConfig:
     """
     Load the MXM configuration by composing layered YAML files.
 
@@ -92,7 +121,7 @@ def load_config(
     merged: DictConfig = OmegaConf.merge(*layers)  # type: ignore[assignment]
     OmegaConf.resolve(merged)
     OmegaConf.set_readonly(merged, True)
-    return merged
+    return cast(MXMConfig, merged)
 
 
 def _load_block(

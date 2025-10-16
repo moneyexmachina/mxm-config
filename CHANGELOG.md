@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## v0.2.1 — 2025-10-16
+### Added
+- **Typing surface for consumers:** exported `MXMConfig` Protocol so downstream packages can type `cfg` without importing OmegaConf.
+- **Public API returns protocol:** `load_config(...) -> MXMConfig` (backed by OmegaConf `DictConfig` internally).
+- **PEP 561 support:** ship `mxm_config/py.typed` so Pyright/Mypy treat inline annotations as authoritative.
+
+### Notes
+- No runtime behavior change; this is a typing/packaging improvement.
+- Downstreams should import: `from mxm_config import MXMConfig, load_config` and annotate parameters as `cfg: MXMConfig`.
+
 ## v0.2.0 — 2025-10-05
 ### Added
 - Automatic registration of standard MXM resolvers (`cwd`, `home`, `env`, `timestamp`)  
