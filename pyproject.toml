@@ -1,6 +1,6 @@
 [project]
 name = "mxm-config"
-version = "0.2.1"
+version = "0.2.2"
 description = "MXM configuration loader and context resolver"
 authors = [
   { name = "mxm", email = "contact@moneyexmachina.com" }

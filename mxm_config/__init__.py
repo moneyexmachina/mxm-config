@@ -33,6 +33,7 @@ Notes
 
 from __future__ import annotations
 
+from mxm_config.api import make_subconfig
 from mxm_config.init_resolvers import register_mxm_resolvers
 from mxm_config.installer import install_all
 from mxm_config.loader import load_config
@@ -45,4 +46,5 @@ __all__ = [
     "MXMConfig",
     "install_all",
     "load_config",
+    "make_subconfig",
 ]

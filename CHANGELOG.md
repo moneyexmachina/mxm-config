@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## v0.2.2 — 2025-10-16
+### Added
+- `make_subconfig(data: Mapping[str, Any], *, readonly=True, resolve=False) -> MXMConfig`  
+  Factory to build small, dot-accessible config objects from plain dicts without importing OmegaConf.  
+  Useful for package boundaries (e.g., DataIO) and unit tests.
+
+### Notes
+- Re-exported via `from mxm_config import make_subconfig`.
+- Non-breaking; complements v0.2.1’s `MXMConfig` typing surface.
+
 ## v0.2.1 — 2025-10-16
 ### Added
 - **Typing surface for consumers:** exported `MXMConfig` Protocol so downstream packages can type `cfg` without importing OmegaConf.
