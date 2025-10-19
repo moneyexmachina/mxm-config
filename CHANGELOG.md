@@ -6,7 +6,24 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
+## [0.2.5] — 2025-10-19
+### Changed
+- CI: Switch version-check to `tomllib.load(open(..., 'rb'))` to avoid bytes/str mismatch.
+- CI: Re-run publish via GitHub Actions (Trusted Publishing / OIDC) on tag `v0.2.5`.
 
+### Fixed
+- Publishing pipeline now succeeds; `mxm-config` is published to PyPI from GitHub Actions.
+
+## [0.2.4] — 2025-10-19
+> Note: Tag exists but PyPI publish failed due to CI version-check bug; superseded by 0.2.5.
+
+### Added
+- GitHub Actions workflow `release.yml` to publish to PyPI using Trusted Publishing (OIDC).
+- GitHub environment `pypi` with required reviewer & wait timer.
+
+### Changed
+- Packaging hygiene: ensure `dist/`, `build/`, and `*.egg-info/` excluded from VCS/sdist.
+- Project metadata polish (classifiers/URLs), keep import path `mxm_config` (no API change).
 ## v0.2.3 — 2025-10-16
 ### Changed
 - Normalized packaging metadata to Poetry-native layout:
