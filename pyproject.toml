@@ -1,13 +1,12 @@
 [tool.poetry]
 name = "mxm-config"
-version = "0.2.3"
+version = "0.2.4"
 description = "MXM configuration loader and context resolver"
 authors = ["mxm <contact@moneyexmachina.com>"]
 license = "MIT"
 readme = "README.md"
-homepage = "https://github.com/moneyexmachina/mxm-config"
-repository = "https://github.com/moneyexmachina/mxm-config"
 keywords = ["mxm", "configuration", "omegaconf", "settings"]
+exclude = ["dist/*", "build/*", "*.egg-info/*", ".venv/*"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "License :: OSI Approved :: MIT License",
@@ -16,13 +15,16 @@ classifiers = [
   "Programming Language :: Python :: 3.13",
   "Typing :: Typed",
 ]
-
 packages = [{ include = "mxm_config" }]
 include = [
+  "LICENSE",
   "mxm_config/examples/demo_config/*.yaml",
   "mxm_config/py.typed",
 ]
-
+[tool.poetry.urls]
+"Homepage" = "https://github.com/moneyexmachina/mxm-config"
+"Repository" = "https://github.com/moneyexmachina/mxm-config"
+"Issues" = "https://github.com/moneyexmachina/mxm-config/issues"
 [tool.poetry.dependencies]
 python = ">=3.12,<4.0"
 omegaconf = ">=2.3.0,<3.0.0"
