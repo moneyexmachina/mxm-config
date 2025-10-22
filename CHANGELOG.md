@@ -6,6 +6,21 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
+
+## [0.3.0] - 2025-10-22
+
+### Added
+- `make_view(cfg, path, *, readonly=True, resolve=False)` for safe, typed, **read-only subconfig views**. Enforces that `path` resolves to a mapping (`DictConfig`); raises `TypeError` for lists or primitive leaves.
+- Tests: coverage for nested selection, interpolation resolution, read-only semantics, identity (no deep copy), error paths (missing path, non-`DictConfig` input, non-mapping selections).
+
+### Changed
+- Co-locate `make_subconfig` implementation with `make_view` in `mxm_config/helpers.py`.
+- Re-export `make_subconfig` and `make_view` from package root (`mxm_config`).
+- Docstrings and README sections (“View vs Subconfig”) updated for clarity.
+
+### Removed
+- `mxm_config/api.py` (legacy location for `make_subconfig`)—removed to simplify the public surface. Import from `mxm_config` or `mxm_config.helpers` instead.
+
 ## [0.2.5] — 2025-10-19
 ### Changed
 - CI: Switch version-check to `tomllib.load(open(..., 'rb'))` to avoid bytes/str mismatch.

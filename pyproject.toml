@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "mxm-config"
-version = "0.2.5"
+version = "0.3.0"
 description = "MXM configuration loader and context resolver"
 authors = ["mxm <contact@moneyexmachina.com>"]
 license = "MIT"
@@ -35,6 +35,7 @@ black = "^25.1.0"
 isort = "^6.0.1"
 ipython = "^9.5.0"
 pytest = "^8.4.2"
+pyright = "^1.1.406"
 
 [build-system]
 requires = ["poetry-core>=2.0.0"]
