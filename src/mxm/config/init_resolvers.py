@@ -10,9 +10,9 @@ Resolvers provided:
 
 from __future__ import annotations
 
+from collections.abc import Callable
 import datetime as _dt
 import os as _os
-from collections.abc import Callable
 from typing import Any, cast
 
 from omegaconf import OmegaConf

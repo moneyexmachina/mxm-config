@@ -161,6 +161,8 @@ def install_config(
     if mode is DefaultsMode.seed:
         if seed_root is None:
             raise ValueError("install_config(mode='seed') requires seed_root=Path(...)")
+        if not Path(seed_root).exists():
+            raise FileNotFoundError(f"Seeds directory not found: {seed_root}")
         iterator = _iter_seed_files_from_dir(seed_root)
 
     elif mode is DefaultsMode.shipped:

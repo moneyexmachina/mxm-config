@@ -1,6 +1,6 @@
 import importlib
-import socket
 from pathlib import Path
+import socket
 
 import pytest
 

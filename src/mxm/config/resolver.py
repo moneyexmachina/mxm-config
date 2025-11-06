@@ -1,6 +1,6 @@
 import os
-import socket
 from pathlib import Path
+import socket
 
 
 def get_config_root() -> Path:

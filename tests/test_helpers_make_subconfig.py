@@ -3,9 +3,9 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any, cast
 
-import pytest
 from omegaconf import DictConfig, OmegaConf
 from omegaconf.errors import ReadonlyConfigError
+import pytest
 
 from mxm.config.helpers import make_subconfig
 

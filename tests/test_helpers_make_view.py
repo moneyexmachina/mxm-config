@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import Any, cast
 
-import pytest
 from omegaconf import DictConfig, OmegaConf
 from omegaconf.errors import ReadonlyConfigError
+import pytest
 
 from mxm.config.helpers import make_subconfig, make_view
 
