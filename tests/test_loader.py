@@ -2,16 +2,16 @@ from pathlib import Path
 
 import pytest
 
-from mxm_config.installer import install_all
-from mxm_config.loader import load_config
-from mxm_config.types import MXMConfig
+from mxm.config.installer import install_all
+from mxm.config.loader import load_config
+from mxm.config.types import MXMConfig
 
 
 @pytest.fixture
 def setup_demo(tmp_path: Path) -> Path:
     """Install demo config into a temporary root and return its path."""
     install_all(
-        "mxm_config.examples.demo_config",
+        "mxm.config.examples.demo_config",
         target_root=tmp_path,
         target_name="demo",
     )

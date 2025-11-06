@@ -32,13 +32,13 @@ from typing import Any, cast
 
 from omegaconf import DictConfig, ListConfig, OmegaConf
 
-from mxm_config.resolver import (
+from mxm.config.resolver import (
     get_config_root,
     resolve_environment,
     resolve_machine,
     resolve_profile,
 )
-from mxm_config.types import MXMConfig
+from mxm.config.types import MXMConfig
 
 Layer = ListConfig | DictConfig
 

@@ -15,7 +15,7 @@ Exports
 
 Quick start
 -----------
-    from mxm_config import MXMConfig, install_all, load_config, make_view
+    from mxm.config import MXMConfig, install_all, load_config, make_view
 
     # (Optional) install package defaults for first-run setups
     install_all()
@@ -46,11 +46,11 @@ Notes
 
 from __future__ import annotations
 
-from mxm_config.helpers import make_subconfig, make_view
-from mxm_config.init_resolvers import register_mxm_resolvers
-from mxm_config.installer import install_all
-from mxm_config.loader import load_config
-from mxm_config.types import MXMConfig
+from mxm.config.helpers import make_subconfig, make_view
+from mxm.config.init_resolvers import register_mxm_resolvers
+from mxm.config.installer import install_all
+from mxm.config.loader import load_config
+from mxm.config.types import MXMConfig
 
 # Register standard MXM resolvers at import time so `${...}` interpolations work globally.
 register_mxm_resolvers()

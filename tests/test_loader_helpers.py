@@ -4,8 +4,8 @@ from typing import Any
 import pytest
 from omegaconf import DictConfig, OmegaConf
 
-from mxm_config.loader import _load_block  # pyright: ignore[reportPrivateUsage]
-from mxm_config.resolver import resolve_environment, resolve_machine, resolve_profile
+from mxm.config.loader import _load_block  # pyright: ignore[reportPrivateUsage]
+from mxm.config.resolver import resolve_environment, resolve_machine, resolve_profile
 
 
 def write_yaml(path: Path, content: dict[str, Any]) -> None:

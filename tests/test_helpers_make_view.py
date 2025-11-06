@@ -6,7 +6,7 @@ import pytest
 from omegaconf import DictConfig, OmegaConf
 from omegaconf.errors import ReadonlyConfigError
 
-from mxm_config.helpers import make_subconfig, make_view
+from mxm.config.helpers import make_subconfig, make_view
 
 
 def _mk_cfg() -> DictConfig:
@@ -129,7 +129,7 @@ def test_isolation_via_copy_from_view() -> None:
 
 def test_public_import_surface_still_works_for_helpers() -> None:
     # Convenience: ensure make_view is importable from package root via re-export
-    from mxm_config import make_view as make_view_public  # type: ignore
+    from mxm.config import make_view as make_view_public  # type: ignore
 
     cfg = _mk_cfg()
     v = cast(DictConfig, make_view_public(cfg, "mxm_dataio"))

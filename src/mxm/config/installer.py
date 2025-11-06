@@ -3,7 +3,7 @@ from importlib.resources import files
 from pathlib import Path
 from typing import cast
 
-from mxm_config.resolver import get_config_root
+from mxm.config.resolver import get_config_root
 
 _CORE_FILES: list[str] = [
     "default.yaml",
