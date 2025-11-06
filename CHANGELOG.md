@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.4.0] - 2025-11-06
+### Added
+- `install_config(app_id, *, mode={'shipped','seed','empty'}, ...) -> InstallReport`
+- `DefaultsMode` enum and `InstallReport` dataclass.
+- Shipped defaults under `mxm.config._data.seeds/` (single source of truth).
+
+### Changed
+- Tests migrated to `install_config` and single-source seeds (no duplication).
+
+### Deprecated
+- `install_all(...)` — still available but emits `DeprecationWarning`. Use `install_config(...)`.
+
+### Notes
+- No breaking changes. Removal of `install_all` will happen in a future major/minor (TBD).
 ## [0.3.0] - 2025-10-22
 
 ### Added

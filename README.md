@@ -10,8 +10,6 @@
 `mxm-config` provides a unified way to **install, load, layer, and resolve configuration** across all Money Ex Machina (MXM) packages and applications.  
 It separates configuration from secrets and runtime metadata, enforces deterministic layering, and ensures every run has a transparent, reproducible view of its operating context.
 
----
-
 ## Design Principles
 
 - **Separation of concerns**  
@@ -31,7 +29,23 @@ It separates configuration from secrets and runtime metadata, enforces determini
   - Layers are minimal and orthogonal.  
   - New packages can register defaults without breaking existing ones.  
 
----
+## The App-Owned Config Root
+
+Every MXM application owns a dedicated configuration directory under:
+
+```
+~/.config/mxm/<app_id>/
+```
+
+This directory is the **single source of truth** for that application’s configuration.  
+All MXM tooling — loaders, resolvers, CLIs — read exclusively from this location.  
+Installing configs simply scaffolds this directory; once created, it becomes user- or environment-owned.
+
+You can override the global root with the environment variable:
+
+```
+$ export MXM_CONFIG_HOME=/custom/path
+```
 
 ## Configuration Layers
 
@@ -58,62 +72,80 @@ At runtime, configuration is resolved by merging up to six layers in order of pr
 6. **Explicit overrides (dict)**  
    Passed directly in code, applied last.
 
----
-
 ## Installing Configs
 
-Use the installer to copy package-shipped configs into the user’s config root (`~/.config/mxm/` by default, override with `$MXM_CONFIG_HOME`).
+Use `install_config` to copy packaged or local defaults into the app-owned config root.
 
 ```python
-from mxm_config.installer import install_all
+from mxm.config import install_config, DefaultsMode
 
-install_all("mxm_config.examples.demo_config", target_name="demo")
+# Install shipped defaults (packaged resources)
+install_config(
+    app_id="demo",
+    mode=DefaultsMode.shipped,
+    shipped_package="mxm.config._data.seeds",
+)
+
+# Install from a local folder of YAMLs (dev/test mode)
+from importlib.resources import as_file, files
+with as_file(files("mxm.config._data") / "seeds") as p:
+    install_config(app_id="demo", mode=DefaultsMode.seed, seed_root=p)
+
+# Create an empty directory + sentinel (for CI/bootstrap)
+install_config(app_id="demo", mode=DefaultsMode.empty)
 ```
 
-This creates:
+All installs target `~/.config/mxm/<app_id>/`, ensuring every MXM component reads from a predictable, canonical location.
 
-```
-~/.config/mxm/demo/default.yaml
-~/.config/mxm/demo/environment.yaml
-~/.config/mxm/demo/machine.yaml
-~/.config/mxm/demo/profile.yaml
-~/.config/mxm/demo/local.yaml
-```
+The function returns an **`InstallReport`** summarising created, copied, and skipped files.
 
-Any `templates/*.yaml` files shipped with the package will also be installed under `~/.config/mxm/<package>/templates/`.
+### Install Modes
 
----
+| Mode | Source | Typical Use | Description |
+|------|---------|--------------|--------------|
+| `shipped` | Packaged folder, e.g. `mxm.config._data.seeds` | End-users | Install defaults bundled with the wheel. |
+| `seed` | Filesystem path (e.g. repo `_data/seeds`) | Development, testing | Install from editable on-disk seeds. |
+| `empty` | None | CI, sandbox setup | Create only directory and sentinel. |
+
+### Deprecation
+
+`install_all(...)` is **deprecated**.  
+It now delegates internally to `install_config(mode='shipped')` and will be removed in a future release.  
+Existing code will continue to work but emit a `DeprecationWarning`.
 
 ## Loading Configs
 
 ```python
-from mxm_config.loader import load_config
+from mxm.config import load_config
 
-cfg = load_config("demo", env="dev", profile="research")
+cfg = load_config(package="demo", env="dev", profile="research")
 
 print(cfg.parameters.refresh_interval)
 print(cfg.paths.output)
 ```
 
+- The loader reads from the app-owned config root (`~/.config/mxm/<package>/` by default).  
 - Context (`mxm_env`, `mxm_profile`, `mxm_machine`) is injected automatically.  
 - All `${...}` interpolations are resolved before returning.  
-- The returned config is read-only by default.
+- The returned config is read-only by default.  
 
----
+## Shipped Defaults
 
-## Example Package
+The repository’s canonical default configuration lives under:
 
-The repo ships a minimal demo package: `mxm_config/examples/demo_config`
+```
+src/mxm/config/_data/seeds/
+```
 
-- `default.yaml` → valid baseline  
-- `environment.yaml` → defines `dev` and `prod`  
-- `machine.yaml` → overrides per host (`bridge`, `wildling`, `monolith`)  
-- `profile.yaml` → defines `research`, `trading`  
-- `local.yaml` → local overrides (optional, not versioned)
+These files are included in the wheel and used both for runtime defaults (`DefaultsMode.shipped`) and for tests (`DefaultsMode.seed`).  
+They contain minimal but valid examples for all standard YAML layers:
 
-This serves as a test fixture for installers and loaders.
-
----
+- `default.yaml`
+- `environment.yaml`
+- `machine.yaml`
+- `profile.yaml`
+- `local.yaml`
+- `templates/` (optional)
 
 ## Testing
 
@@ -122,20 +154,20 @@ Tests use `pytest` with `monkeypatch` to isolate config roots and hostnames.
 Run with:
 
 ```bash
-poetry run pytest
+make test
+# or
+poetry run pytest -q
 ```
 
----
+All tests run in a sandboxed temp directory and never touch the real `~/.config/mxm/`.
 
 ## Roadmap
 
-- Config schema validation (via `omegaconf.structured` or pydantic)  
-- CLI tool (`mxm-config install demo`)  
+- Config schema validation (`omegaconf.structured` / `pydantic`)  
+- CLI tool (`mxm-config install-config …`)  
 - Environment variable overrides → auto-mapped into overrides dict  
 - Integration with `mxm-runtime` for provenance tracking  
 - Config hashing for reproducibility and auditability  
-
----
 
 ## License
 
