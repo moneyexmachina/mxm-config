@@ -1,7 +1,7 @@
 import shutil
 from importlib.resources import files
 from pathlib import Path
-from typing import List, Optional, cast
+from typing import cast
 
 from mxm_config.resolver import get_config_root
 
@@ -16,10 +16,10 @@ _CORE_FILES: list[str] = [
 
 def install_all(
     package: str,
-    target_root: Optional[Path] = None,
-    target_name: Optional[str] = None,
+    target_root: Path | None = None,
+    target_name: str | None = None,
     overwrite: bool = False,
-) -> List[Path]:
+) -> list[Path]:
     """Install all known config files from a package into ~/.config/mxm/<package>/.
 
     Args:
@@ -39,7 +39,7 @@ def install_all(
     dst_root: Path = config_root / package_dir
     dst_root.mkdir(parents=True, exist_ok=True)
 
-    installed: List[Path] = []
+    installed: list[Path] = []
 
     for fname in _CORE_FILES:
         src = files(package).joinpath(fname)

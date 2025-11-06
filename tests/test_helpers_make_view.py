@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import Any, Dict, cast
+from typing import Any, cast
 
 import pytest
-from omegaconf import DictConfig, ListConfig, OmegaConf
+from omegaconf import DictConfig, OmegaConf
 from omegaconf.errors import ReadonlyConfigError
 
 from mxm_config.helpers import make_subconfig, make_view
@@ -75,7 +75,7 @@ def test_missing_path_raises_keyerror() -> None:
 
 def test_non_dictconfig_input_raises_typeerror() -> None:
     # Passing a plain dict should raise, since make_view expects DictConfig
-    plain: Dict[str, Any] = {"a": {"b": 1}}
+    plain: dict[str, Any] = {"a": {"b": 1}}
     with pytest.raises(TypeError):
         _ = make_view(cast(Any, plain), "a")
 
@@ -105,7 +105,7 @@ def test_resolve_flag_semantics() -> None:
         DictConfig,
         make_view(cfg, "mxm_datakraken.sources.justetf.http", resolve=False),
     )
-    raw = cast(Dict[str, Any], OmegaConf.to_container(http_unresolved, resolve=False))
+    raw = cast(dict[str, Any], OmegaConf.to_container(http_unresolved, resolve=False))
     assert raw["timeout_s"] == "${mxm_dataio.http.timeout_s}"
 
     cfg2 = _mk_cfg()
@@ -113,7 +113,7 @@ def test_resolve_flag_semantics() -> None:
         DictConfig,
         make_view(cfg2, "mxm_datakraken.sources.justetf.http", resolve=True),
     )
-    raw2 = cast(Dict[str, Any], OmegaConf.to_container(http_resolved, resolve=False))
+    raw2 = cast(dict[str, Any], OmegaConf.to_container(http_resolved, resolve=False))
     assert raw2["timeout_s"] == 10
 
 
@@ -121,7 +121,7 @@ def test_isolation_via_copy_from_view() -> None:
     cfg = _mk_cfg()
     view = cast(DictConfig, make_view(cfg, "mxm_dataio.http", resolve=True))
     # Make a local, regular dict copy that we can mutate freely
-    local = cast(Dict[str, Any], OmegaConf.to_container(view, resolve=True))
+    local = cast(dict[str, Any], OmegaConf.to_container(view, resolve=True))
     local["timeout_s"] = 999
     # Original global config remains unchanged
     assert cfg.mxm_dataio.http.timeout_s == 10  # type: ignore[attr-defined]
