@@ -13,6 +13,8 @@ def test_get_config_root_default(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.delenv("MXM_CONFIG_HOME", raising=False)
+    monkeypatch.delenv("XDG_CONFIG_HOME", raising=False)
+
     # Belt-and-braces: set HOME and also override Path.home() for environments that
     # ignore HOME or cache it at import time.
     monkeypatch.setenv("HOME", str(tmp_path / "home"))
