@@ -17,7 +17,10 @@ def test_get_config_root_default(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.delenv("MXM_CONFIG_HOME", raising=False)
+    # Belt-and-braces: set HOME and also override Path.home() for environments that
+    # ignore HOME or cache it at import time.
     monkeypatch.setenv("HOME", str(tmp_path / "home"))
+    monkeypatch.setattr(Path, "home", lambda: tmp_path / "home")
     expected = tmp_path / "home" / ".config" / "mxm"
     assert get_config_root() == expected
 

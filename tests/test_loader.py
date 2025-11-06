@@ -19,7 +19,13 @@ def setup_demo(tmp_path: Path) -> Path:
 
 
 def test_load_defaults_only(setup_demo: Path) -> None:
-    cfg: MXMConfig = load_config("demo", env="dev", profile="default", root=setup_demo)
+    cfg: MXMConfig = load_config(
+        "demo",
+        env="dev",
+        profile="default",
+        root=setup_demo,
+        machine="bridge",
+    )
 
     # From defaults.yaml
     assert cfg.project == "mxm-config demo"
@@ -35,7 +41,13 @@ def test_load_defaults_only(setup_demo: Path) -> None:
 
 
 def test_environment_layer(setup_demo: Path) -> None:
-    cfg: MXMConfig = load_config("demo", env="prod", profile="default", root=setup_demo)
+    cfg: MXMConfig = load_config(
+        "demo",
+        env="prod",
+        profile="default",
+        root=setup_demo,
+        machine="bridge",
+    )
 
     # prod env overrides default.yaml
     assert cfg.parameters.refresh_interval == "10min"
@@ -46,7 +58,11 @@ def test_environment_layer(setup_demo: Path) -> None:
 
 def test_machine_layer(setup_demo: Path) -> None:
     cfg: MXMConfig = load_config(
-        "demo", env="dev", profile="default", root=setup_demo, machine="wildling"
+        "demo",
+        env="dev",
+        profile="default",
+        root=setup_demo,
+        machine="wildling",
     )
 
     # Machine layer affects paths.base_output (value depends on demo_config/machine.yaml)
@@ -54,7 +70,13 @@ def test_machine_layer(setup_demo: Path) -> None:
 
 
 def test_profile_layer(setup_demo: Path) -> None:
-    cfg: MXMConfig = load_config("demo", env="dev", profile="research", root=setup_demo)
+    cfg: MXMConfig = load_config(
+        "demo",
+        env="dev",
+        profile="research",
+        root=setup_demo,
+        machine="bridge",
+    )
 
     # profile.yaml["research"] overrides refresh_interval
     assert cfg.parameters.refresh_interval == "30min"
@@ -69,6 +91,7 @@ def test_overrides_file_and_dict(setup_demo: Path) -> None:
         env="dev",
         profile="default",
         root=setup_demo,
+        machine="bridge",
         overrides={"parameters": {"sample_count": 777}},
     )
 
