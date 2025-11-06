@@ -17,9 +17,9 @@ classifiers = [
 ]
 packages = [{ include = "mxm", from = "src" }]
 include = [
-  "LICENSE",
-  "src/mxm/config/examples/demo_config/*.yaml",
-  "src/mxm/config/py.typed",
+  { path = "LICENSE" },
+  { path = "src/mxm/config/py.typed", format = "wheel" },
+  { path = "src/mxm/config/_data/seeds", format = "wheel" },
 ]
 [tool.poetry.urls]
 "Homepage" = "https://github.com/moneyexmachina/mxm-config"

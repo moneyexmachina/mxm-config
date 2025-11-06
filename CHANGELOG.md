@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
-## [0.4.0] - 2025-11-06
+## [0.4.0 Unreleased] - 2025-11-06
 ### Added
 - `install_config(app_id, *, mode={'shipped','seed','empty'}, ...) -> InstallReport`
 - `DefaultsMode` enum and `InstallReport` dataclass.
