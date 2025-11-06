@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, cast
+from collections.abc import Callable
+from typing import Any, cast
 
 import pytest
 from omegaconf import DictConfig, OmegaConf
@@ -59,10 +60,10 @@ def test_interpolation_resolution_off_default_false() -> None:
     # Access resolves lazily
     assert cfg.b.x == 7  # type: ignore[attr-defined]
     # Container without resolve retains the expression
-    raw = cast(Dict[str, Any], OmegaConf.to_container(cfg, resolve=False))
+    raw = cast(dict[str, Any], OmegaConf.to_container(cfg, resolve=False))
     assert raw["b"]["x"] == "${a}"
     # With resolve=True it's concrete
-    resolved = cast(Dict[str, Any], OmegaConf.to_container(cfg, resolve=True))
+    resolved = cast(dict[str, Any], OmegaConf.to_container(cfg, resolve=True))
     assert resolved["b"]["x"] == 7
 
 
@@ -71,7 +72,7 @@ def test_interpolation_resolution_on_eager_resolve() -> None:
     # Already resolved
     assert cfg.b.x == 7  # type: ignore[attr-defined]
     # Even with resolve=False in to_container, value is concrete
-    raw = cast(Dict[str, Any], OmegaConf.to_container(cfg, resolve=False))
+    raw = cast(dict[str, Any], OmegaConf.to_container(cfg, resolve=False))
     assert raw["b"]["x"] == 7
 
 

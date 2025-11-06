@@ -22,7 +22,8 @@ access), backed by OmegaConf `DictConfig` under the hood and typed as `MXMConfig
 
 from __future__ import annotations
 
-from typing import Any, Mapping, Optional
+from collections.abc import Mapping
+from typing import Any
 
 from omegaconf import DictConfig, OmegaConf
 
@@ -112,7 +113,7 @@ def make_view(
     """
     if not isinstance(cfg, DictConfig):
         raise TypeError("make_view expects an OmegaConf DictConfig (MXMConfig).")
-    selected: Optional[object] = OmegaConf.select(cfg, path)
+    selected: object | None = OmegaConf.select(cfg, path)
     if selected is None:
         raise KeyError(f"Config path not found: '{path}'")
 

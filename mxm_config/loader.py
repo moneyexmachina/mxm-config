@@ -26,9 +26,9 @@ Downstream packages should generally import `load_config` via
 depending on OmegaConf directly.
 """
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from pathlib import Path
-from typing import Any, Callable, Union, cast
+from typing import Any, cast
 
 from omegaconf import DictConfig, ListConfig, OmegaConf
 
@@ -40,7 +40,7 @@ from mxm_config.resolver import (
 )
 from mxm_config.types import MXMConfig
 
-Layer = Union[ListConfig, DictConfig]
+Layer = ListConfig | DictConfig
 
 
 def load_config(

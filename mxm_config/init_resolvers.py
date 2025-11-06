@@ -12,7 +12,8 @@ from __future__ import annotations
 
 import datetime as _dt
 import os as _os
-from typing import Any, Callable, cast
+from collections.abc import Callable
+from typing import Any, cast
 
 from omegaconf import OmegaConf
 

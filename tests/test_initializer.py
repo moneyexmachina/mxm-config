@@ -16,7 +16,7 @@ def test_initiate_with_argument_creates(tmp_path: Path) -> None:
 def test_initiate_with_envvar(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     env_target = tmp_path / "envroot"
     monkeypatch.setenv("MXM_CONFIG_HOME", str(env_target))
-    # Ensure other fallbacks don’t interfere
+    # Ensure other fallbacks don't interfere
     monkeypatch.delenv("XDG_CONFIG_HOME", raising=False)
     monkeypatch.delenv("HOME", raising=False)
 
