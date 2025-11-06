@@ -30,12 +30,12 @@ python = ">=3.12,<4.0"
 omegaconf = ">=2.3.0,<3.0.0"
 
 [tool.poetry.group.dev.dependencies]
-ruff = "^0.13.0"
-black = "^25.1.0"
-isort = "^6.0.1"
+ruff = "^0.14.3"
+black = "^25.9.0"
+isort = "^7.0.0"
 ipython = "^9.5.0"
 pytest = "^8.4.2"
-pyright = "^1.1.406"
+pyright = "^1.1.407"
 
 [build-system]
 requires = ["poetry-core>=2.0.0"]
@@ -43,14 +43,16 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.ruff]
 line-length = 88
-target-version = "py312"
-select = ["E", "F", "B", "ANN"]
-ignore = ["ANN101", "ANN102"]
+target-version = "py313"
 exclude = ["build", "dist", ".venv"]
+
+[tool.ruff.lint]
+select = ["E","F","I","B","UP","C90","RUF"]
+ignore = ["E203","E501"]
 
 [tool.black]
 line-length = 88
-target-version = ["py312"]
+target-version = ["py313"]
 
 [tool.isort]
 profile = "black"
@@ -59,11 +61,6 @@ known_first_party = ["mxm_config"]
 known_third_party = ["omegaconf"]
 combine_as_imports = true
 
-[tool.pyright]
-typeCheckingMode = "strict"
-include = ["mxm_config"]
-exclude = ["build", "dist", "docs", ".venv"]
-pythonVersion = "3.12"
-pythonPlatform = "All"
-reportMissingImports = "error"
-reportMissingTypeStubs = "warning"
+[tool.pytest.ini_options]
+addopts = "-q"
+pythonpath = ["mxm_config"]
