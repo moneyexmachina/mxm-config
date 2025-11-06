@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from mxm_config.initializer import initiate_mxm_configs
+from mxm.config.initializer import initiate_mxm_configs
 
 
 def test_initiate_with_argument_creates(tmp_path: Path) -> None:

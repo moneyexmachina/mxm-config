@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from mxm_config import resolver as resolver
+from mxm.config import resolver as resolver
 
 # --- get_config_root ------------------------------------------------------
 

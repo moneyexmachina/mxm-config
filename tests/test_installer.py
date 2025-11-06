@@ -3,12 +3,12 @@ from pathlib import Path
 
 import pytest
 
-from mxm_config.installer import install_all
+from mxm.config.installer import install_all
 
 
 @pytest.fixture
 def demo_pkg() -> str:
-    return "mxm_config.examples.demo_config"
+    return "mxm.config.examples.demo_config"
 
 
 def test_install_all_with_path(tmp_path: Path, demo_pkg: str) -> None:
@@ -63,7 +63,14 @@ def test_install_all_respects_overwrite(tmp_path: Path, demo_pkg: str) -> None:
 
 
 def test_install_all_templates(tmp_path: Path, demo_pkg: str) -> None:
-    pkg_path = Path(__file__).parents[1] / "mxm_config" / "examples" / "demo_config"
+    pkg_path = (
+        Path(__file__).parents[1]
+        / "src"
+        / "mxm"
+        / "config"
+        / "examples"
+        / "demo_config"
+    )
     templates_dir = pkg_path / "templates"
     templates_dir.mkdir(exist_ok=True)
     fake_yaml = templates_dir / "example.yaml"

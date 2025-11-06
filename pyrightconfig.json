@@ -7,7 +7,7 @@
   "reportMissingTypeStubs": false,
   "reportPrivateUsage": false,
 
-  "include": ["mxm_config", "tests"],
+  "include": ["src", "tests"],
   "exclude": [
     ".git",
     ".venv",
@@ -23,7 +23,7 @@
 
   "executionEnvironments": [
     {
-      "root": "mxm_config",
+      "root": "src",
       "pythonVersion": "3.13"
     }
   ]

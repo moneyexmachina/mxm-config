@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from mxm_config.resolver import get_config_root
+from mxm.config.resolver import get_config_root
 
 
 def initiate_mxm_configs(

@@ -15,11 +15,11 @@ classifiers = [
   "Programming Language :: Python :: 3.13",
   "Typing :: Typed",
 ]
-packages = [{ include = "mxm_config" }]
+packages = [{ include = "mxm", from = "src" }]
 include = [
   "LICENSE",
-  "mxm_config/examples/demo_config/*.yaml",
-  "mxm_config/py.typed",
+  "src/mxm/config/examples/demo_config/*.yaml",
+  "src/mxm/config/py.typed",
 ]
 [tool.poetry.urls]
 "Homepage" = "https://github.com/moneyexmachina/mxm-config"
@@ -57,10 +57,10 @@ target-version = ["py313"]
 [tool.isort]
 profile = "black"
 line_length = 88
-known_first_party = ["mxm_config"]
+known_first_party = ["mxm"]
 known_third_party = ["omegaconf"]
 combine_as_imports = true
 
 [tool.pytest.ini_options]
 addopts = "-q"
-pythonpath = ["mxm_config"]
+pythonpath = ["src"]

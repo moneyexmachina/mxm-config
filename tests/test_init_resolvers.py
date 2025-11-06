@@ -12,7 +12,7 @@ from omegaconf import OmegaConf
 
 # Import only the public API.
 # We test private helpers indirectly via behaviour.
-from mxm_config.init_resolvers import register_mxm_resolvers
+from mxm.config.init_resolvers import register_mxm_resolvers
 
 # ---------------------------------------------------------------------------
 # Constants

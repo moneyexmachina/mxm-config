@@ -7,7 +7,7 @@ import pytest
 from omegaconf import DictConfig, OmegaConf
 from omegaconf.errors import ReadonlyConfigError
 
-from mxm_config.helpers import make_subconfig
+from mxm.config.helpers import make_subconfig
 
 
 def test_constructs_config_from_mapping_attribute_and_item_access() -> None:
