@@ -21,8 +21,8 @@ APP_ID = "demo_config"
 
 @contextmanager
 def _shipped_seeds_path():
-    """Yield a real filesystem Path to src/mxm/config/_data/seeds without duplicating files."""
-    with as_file(files("mxm.config._data") / "seeds") as p:
+    """Yield a real filesystem Path to src/mxm/config/_data/seeds/mxm.config without duplicating files."""
+    with as_file(files("mxm.config._data") / "seeds" / "mxm.config") as p:
         yield Path(p)
 
 

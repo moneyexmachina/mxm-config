@@ -19,7 +19,7 @@ packages = [{ include = "mxm", from = "src" }]
 include = [
   { path = "LICENSE" },
   { path = "src/mxm/config/py.typed", format = "wheel" },
-  { path = "src/mxm/config/_data/seeds", format = "wheel" },
+  { path = "src/mxm/config/_data/seeds/**/*.yaml", format = "wheel" },
 ]
 [tool.poetry.urls]
 "Homepage" = "https://github.com/moneyexmachina/mxm-config"

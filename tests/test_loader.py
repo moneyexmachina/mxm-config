@@ -11,9 +11,9 @@ from mxm.config.types import MXMConfig
 def setup_demo(tmp_path: Path) -> Path:
     """Install demo config into a temporary root and return its path."""
     install_config(
-        app_id="demo",
+        app_id="mxm.config",
         mode=DefaultsMode.shipped,
-        shipped_package="mxm.config._data.seeds",
+        shipped_package="mxm.config",
         dest_root=tmp_path,
         overwrite=True,
     )
@@ -22,7 +22,7 @@ def setup_demo(tmp_path: Path) -> Path:
 
 def test_load_defaults_only(setup_demo: Path) -> None:
     cfg: MXMConfig = load_config(
-        "demo",
+        "mxm.config",
         env="dev",
         profile="default",
         root=setup_demo,
@@ -44,7 +44,7 @@ def test_load_defaults_only(setup_demo: Path) -> None:
 
 def test_environment_layer(setup_demo: Path) -> None:
     cfg: MXMConfig = load_config(
-        "demo",
+        "mxm.config",
         env="prod",
         profile="default",
         root=setup_demo,
@@ -60,7 +60,7 @@ def test_environment_layer(setup_demo: Path) -> None:
 
 def test_machine_layer(setup_demo: Path) -> None:
     cfg: MXMConfig = load_config(
-        "demo",
+        "mxm.config",
         env="dev",
         profile="default",
         root=setup_demo,
@@ -73,7 +73,7 @@ def test_machine_layer(setup_demo: Path) -> None:
 
 def test_profile_layer(setup_demo: Path) -> None:
     cfg: MXMConfig = load_config(
-        "demo",
+        "mxm.config",
         env="dev",
         profile="research",
         root=setup_demo,
@@ -89,7 +89,7 @@ def test_profile_layer(setup_demo: Path) -> None:
 
 def test_overrides_file_and_dict(setup_demo: Path) -> None:
     cfg: MXMConfig = load_config(
-        "demo",
+        "mxm.config",
         env="dev",
         profile="default",
         root=setup_demo,

@@ -15,8 +15,8 @@ CORE_FILES = [
     "local.yaml",
 ]
 
-APP_ID = "demo_config"
-SHIPPED_PKG = "mxm.config._data.seeds"
+APP_ID = "mxm.config"
+SHIPPED_PKG = "mxm.config"
 
 
 @pytest.fixture()
@@ -51,7 +51,7 @@ def test_shipped_copies_core_files(dest_root: Path):
 
 def test_shipped_templates_copied_if_present(dest_root: Path):
     """Only asserts templates if the shipped seeds actually include them."""
-    seeds_root = resources.files("mxm.config._data") / "seeds"
+    seeds_root = resources.files("mxm.config._data") / "seeds" / "mxm.config"
     templates_dir = seeds_root / "templates"
 
     # If the package has no templates dir (or no *.yaml), this becomes a no-op
@@ -133,7 +133,7 @@ def test_shipped_overwrite_replaces_modified_file(dest_root: Path):
 
     # 4) Compare with shipped source content to ensure it was restored
     shipped_default = (
-        resources.files("mxm.config._data") / "seeds" / "default.yaml"
+        resources.files("mxm.config._data") / "seeds" / "mxm.config" / "default.yaml"
     ).read_text(encoding="utf-8")
     current_default = target.read_text(encoding="utf-8")
     assert current_default == shipped_default
