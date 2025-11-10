@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Iterator
-from dataclasses import dataclass, field
-from enum import Enum
 import importlib
 from importlib import resources
 from pathlib import Path
@@ -10,7 +8,9 @@ import shutil
 import warnings
 
 from mxm.config.ids import validate_app_id
+from mxm.config.reports import InstalledFile, InstallReport
 from mxm.config.resolver import get_config_root
+from mxm.config.types import DefaultsMode
 
 # --- Public API constants -----------------------------------------------------
 
@@ -21,42 +21,6 @@ _CORE_FILES: list[str] = [
     "profile.yaml",
     "local.yaml",
 ]
-
-
-# --- Types --------------------------------------------------------------------
-
-
-class DefaultsMode(str, Enum):
-    seed = "seed"  # copy from a source directory (repo seeds)
-    shipped = "shipped"  # copy from an installed package (importlib.resources)
-    empty = "empty"  # create dirs/sentinels only
-
-
-@dataclass(frozen=True)
-class InstalledFile:
-    src: Path | None  # None for "empty" created items
-    dest: Path
-    action: str  # "copied" | "created" | "skipped"
-
-
-@dataclass(frozen=True)
-class InstallReport:
-    app_id: str
-    mode: DefaultsMode
-    dest_root: Path
-    installed: tuple[InstalledFile, ...] = field(default_factory=tuple)
-
-    @property
-    def copied_count(self) -> int:
-        return sum(1 for i in self.installed if i.action == "copied")
-
-    @property
-    def created_count(self) -> int:
-        return sum(1 for i in self.installed if i.action == "created")
-
-    @property
-    def skipped_count(self) -> int:
-        return sum(1 for i in self.installed if i.action == "skipped")
 
 
 # --- Internal helpers ---------------------------------------------------------

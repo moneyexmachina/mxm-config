@@ -72,7 +72,7 @@ At runtime, configuration is resolved by merging up to six layers in order of pr
 6. **Explicit overrides (dict)**  
    Passed directly in code, applied last.
 
-## Installing Configs
+## Installing Configs (Python API)
 
 Use `install_config` to copy packaged or local defaults into the app-owned config root.
 
@@ -106,6 +106,52 @@ The function returns an **`InstallReport`** summarising created, copied, and ski
 | `shipped` | Packaged folder, e.g. `mxm.config._data.seeds` | End-users | Install defaults bundled with the wheel. |
 | `seed` | Filesystem path (e.g. repo `_data/seeds`) | Development, testing | Install from editable on-disk seeds. |
 | `empty` | None | CI, sandbox setup | Create only directory and sentinel. |
+
+
+## Command-Line Interface
+
+You can also install configurations directly from the terminal using the `mxm-config` command.
+
+```bash
+mxm-config --help
+```
+
+### Basic Usage
+
+```bash
+# Install shipped defaults (requires a package with bundled seeds)
+mxm-config install-config --app-id demo --mode shipped --pkg mxm.config
+
+# Install from a local folder of YAMLs (development/testing)
+mxm-config install-config --app-id demo --mode seed --seed-root ./src/mxm/config/_data/seeds
+
+# Create an empty config directory with sentinel only (CI/bootstrap)
+mxm-config install-config --app-id demo --mode empty
+
+# Show JSON report instead of human-readable summary
+mxm-config install-config \
+  --app-id demo \
+  --mode shipped --pkg mxm.config \
+  --dest-root ~/.config/mxm \
+  --overwrite \
+  --json
+```
+
+### Options Overview
+
+| Option | Description |
+|--------|--------------|
+| `--app-id <id>` | Target application ID (e.g., `mxm.config`, `my.app`). |
+| `--mode <shipped\|seed\|empty>` | Installation mode. |
+| `--pkg <package>` | Required for `--mode shipped`. |
+| `--seed-root <path>` | Required for `--mode seed`. |
+| `--dest-root <path>` | Destination root (default: `~/.config/mxm`). |
+| `--overwrite` | Overwrite existing files if present. |
+| `--no-sentinel` | Skip creation of the `.sentinel` file. |
+| `--json` | Output JSON instead of human-readable summary. |
+| `--version`, `--help` | Show version or help information. |
+
+Both the CLI and Python API use the same underlying installer (`install_config`) and produce an `InstallReport` that lists all created, copied, or skipped files.
 
 ### Deprecation
 
@@ -164,7 +210,6 @@ All tests run in a sandboxed temp directory and never touch the real `~/.config/
 ## Roadmap
 
 - Config schema validation (`omegaconf.structured` / `pydantic`)  
-- CLI tool (`mxm-config install-config …`)  
 - Environment variable overrides → auto-mapped into overrides dict  
 - Integration with `mxm-runtime` for provenance tracking  
 - Config hashing for reproducibility and auditability  

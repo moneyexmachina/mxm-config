@@ -69,6 +69,7 @@ Notes
 
 from __future__ import annotations
 
+from mxm.config._version import __version__
 from mxm.config.helpers import make_subconfig, make_view
 from mxm.config.init_resolvers import register_mxm_resolvers
 from mxm.config.installer import (
@@ -87,6 +88,7 @@ __all__ = [
     "DefaultsMode",
     "InstallReport",
     "MXMConfig",
+    "__version__",
     "install_all",  # deprecated
     "install_config",
     "load_config",
