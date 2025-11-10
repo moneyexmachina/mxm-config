@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
+import re
 import subprocess
 import sys
 from typing import Any
@@ -14,6 +16,12 @@ from mxm.config.installer import DefaultsMode
 from mxm.config.reports import InstalledFile, InstallReport
 
 runner = CliRunner()
+
+_ANSI_RE = re.compile(r"\x1B\[[0-?]*[ -/]*[@-~]")
+
+
+def _deansi(s: str) -> str:
+    return _ANSI_RE.sub("", s)
 
 
 # ------------------------------------------------------------------------------
@@ -29,10 +37,23 @@ def run_cli(args: list[str]) -> tuple[int, str, str]:
     -------
     (returncode, stdout, stderr)
     """
+    env = os.environ.copy()
+    # Disable colors/styling across ecosystems
+    env.update(
+        {
+            "NO_COLOR": "1",  # generic no-color convention
+            "CLICOLOR": "0",  # many tools honor this
+            "PY_COLORS": "0",  # pytest/rich honor this
+            "FORCE_COLOR": "0",  # some CLIs honor this
+            "RICH_NO_COLOR": "1",  # rich-specific
+            "TERM": "dumb",  # makes many libs avoid fancy TTY features
+        }
+    )
     proc = subprocess.run(
         [sys.executable, "-m", "mxm.config.cli", *args],
         text=True,
         capture_output=True,
+        env=env,
     )
     return proc.returncode, proc.stdout, proc.stderr
 
@@ -87,13 +108,13 @@ class _Spy:
 def test_help_shows_command_and_options() -> None:
     code, out, _ = run_cli(["--help"])
     assert code == 0
-    assert "install-config" in out
+    assert "install-config" in _deansi(out)
 
-    # Subcommand help includes options
     code2, out2, _ = run_cli(["install-config", "--help"])
     assert code2 == 0
-    assert "--app-id" in out2
-    assert "--mode" in out2
+    clean = _deansi(out2)
+    assert "--app-id" in clean
+    assert "--mode" in clean
 
 
 def test_version_flag_prints_version() -> None:
