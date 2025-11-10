@@ -7,8 +7,8 @@ import pytest
 
 from mxm.config import install_all
 
-SHIPPED_PKG: str = "mxm.config._data.seeds"
-APP_ID: str = "demo_config"
+SHIPPED_PKG: str = "mxm.config"
+APP_ID: str = "mxm.config"
 
 
 def _dest_root(tmp_path: Path) -> Path:

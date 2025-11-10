@@ -1,14 +1,16 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
-from dataclasses import dataclass, field
-from enum import Enum
-from importlib.resources import files
+from collections.abc import Iterable, Iterator
+import importlib
+from importlib import resources
 from pathlib import Path
 import shutil
 import warnings
 
+from mxm.config.ids import validate_app_id
+from mxm.config.reports import InstalledFile, InstallReport
 from mxm.config.resolver import get_config_root
+from mxm.config.types import DefaultsMode
 
 # --- Public API constants -----------------------------------------------------
 
@@ -19,42 +21,6 @@ _CORE_FILES: list[str] = [
     "profile.yaml",
     "local.yaml",
 ]
-
-
-# --- Types --------------------------------------------------------------------
-
-
-class DefaultsMode(str, Enum):
-    seed = "seed"  # copy from a source directory (repo seeds)
-    shipped = "shipped"  # copy from an installed package (importlib.resources)
-    empty = "empty"  # create dirs/sentinels only
-
-
-@dataclass(frozen=True)
-class InstalledFile:
-    src: Path | None  # None for "empty" created items
-    dest: Path
-    action: str  # "copied" | "created" | "skipped"
-
-
-@dataclass(frozen=True)
-class InstallReport:
-    app_id: str
-    mode: DefaultsMode
-    dest_root: Path
-    installed: tuple[InstalledFile, ...] = field(default_factory=tuple)
-
-    @property
-    def copied_count(self) -> int:
-        return sum(1 for i in self.installed if i.action == "copied")
-
-    @property
-    def created_count(self) -> int:
-        return sum(1 for i in self.installed if i.action == "created")
-
-    @property
-    def skipped_count(self) -> int:
-        return sum(1 for i in self.installed if i.action == "skipped")
 
 
 # --- Internal helpers ---------------------------------------------------------
@@ -95,23 +61,49 @@ def _iter_seed_files_from_dir(root: Path) -> Iterable[tuple[Path, Path]]:
                 yield cpath, Path("templates") / cpath.name
 
 
-def _iter_seed_files_from_package(pkg: str) -> Iterable[tuple[Path, Path]]:
-    """Yield (src, rel) for core files and templates/*.yaml from a package."""
-    pkg_root = files(pkg)
+def _iter_seed_files_from_package(
+    shipped_package: str,
+    app_id: str,
+    resource_subpath: str = "_data/seeds",
+) -> Iterator[tuple[Path, Path]]:
+    """
+    Yield (src_file, rel_path) pairs for YAML seeds under:
+        <pkg>/<resource_subpath>/<app_id>/**/*
+    This includes nested folders such as `templates/`.
 
-    # core files
-    for fname in _CORE_FILES:
-        src = pkg_root.joinpath(fname)
-        if src.is_file():
-            yield Path(str(src)), Path(fname)
+    Parameters
+    ----------
+    shipped_package
+        Python import path of the package that ships the seeds.
+    app_id
+        The application identifier (subfolder name under resource_subpath).
+    resource_subpath
+        Relative resource root inside the package (default: 'config/_data/seeds').
 
-    # templates
-    troot = pkg_root.joinpath("templates")
-    if troot.is_dir():
-        for child in troot.iterdir():
-            cpath = Path(str(child))
-            if cpath.is_file() and cpath.suffix == ".yaml":
-                yield cpath, Path("templates") / cpath.name
+    Yields
+    ------
+    (src_file, rel_path)
+        Absolute source file path on disk, and its path relative to the app's seed root.
+    """
+    pkg = importlib.import_module(shipped_package)
+    # Build a traversable resource path to .../seeds/<app_id>
+    traversable = resources.files(pkg) / resource_subpath / app_id  # type: ignore[attr-defined]
+
+    # Convert to a real filesystem path (works for wheels/zip installs too)
+    with resources.as_file(traversable) as base_path:
+        base = Path(base_path)
+
+        if not base.exists() or not base.is_dir():
+            raise FileNotFoundError(
+                f"No seeds for app_id '{app_id}' under "
+                f"'{shipped_package}:{resource_subpath}/{app_id}'."
+            )
+
+        # Recurse and yield YAML files; include nested dirs like 'templates/'
+        for p in base.rglob("*"):
+            if p.is_file() and p.suffix.lower() in {".yaml", ".yml"}:
+                rel = p.relative_to(base)
+                yield p, rel
 
 
 # --- API ------------------------------------------------------------------
@@ -141,6 +133,7 @@ def install_config(
     Returns:
       InstallReport with a full action log.
     """
+    validate_app_id(app_id)
     config_root: Path = dest_root if dest_root else get_config_root()
     dst_root: Path = config_root / app_id
     records: list[InstalledFile] = []
@@ -170,7 +163,7 @@ def install_config(
             raise ValueError(
                 "install_config(mode='shipped') requires shipped_package='package.path'"
             )
-        iterator = _iter_seed_files_from_package(shipped_package)
+        iterator = _iter_seed_files_from_package(shipped_package, app_id)
 
     else:  # pragma: no cover (exhaustive safeguard)
         raise ValueError(f"Unknown mode: {mode}")

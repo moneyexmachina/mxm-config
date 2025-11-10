@@ -7,7 +7,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
-## [0.4.0 Unreleased] - 2025-11-06
+## [Unreleased]
+### Added
+- _Nothing yet._
+
+### Changed
+- _Nothing yet._
+
+### Deprecated
+- _Nothing yet._
+
+### Removed
+- _Nothing yet._
+
+### Fixed
+- _Nothing yet._
+
+---
+
+## [0.5.0] — 2025-11-10
+### Added
+- **Typer-based CLI:** `mxm-config install-config` with:
+  - `--app-id`, `--mode {shipped,seed,empty}`, `--pkg`, `--seed-root`, `--dest-root`,
+    `--overwrite`, `--no-sentinel`, `--json`.
+- **Reporting structures:** `InstallReport` and `InstalledFile` (in `mxm.config.reports`)
+  with `to_dict()`, `pretty()`, and strict/frozen dataclasses.
+- **IDs validation:** `validate_app_id()` with comprehensive tests.
+- **Packaging:** ship seeds from `src/mxm/config/_data/seeds/**` in the wheel.
+- **Makefile:** added/updated `clean` and `distclean` targets and integrated CLI tests.
+
+### Changed
+- **Unified installer API:** `install_config(app_id, *, mode={'shipped','seed','empty'}, ...) -> InstallReport`
+  (consolidates previous installer paths).
+- Tests refactored to target `install_config` and single-source seeds.
+
+### Deprecated
+- `install_all(...)` remains available but emits `DeprecationWarning`. Use `install_config(...)`.
+
+### Notes
+- 0.5.0 **supersedes** the previously drafted but unreleased 0.4.0. All 0.4.0 changes are included here.
+
+---
+## [0.4.0] _never released_
+> Draft notes existed (2025-11-06) but were not tagged or published. Changes were folded into **0.5.0**.
+
 ### Added
 - `install_config(app_id, *, mode={'shipped','seed','empty'}, ...) -> InstallReport`
 - `DefaultsMode` enum and `InstallReport` dataclass.

@@ -14,6 +14,7 @@ with __getitem__ shim, or a small wrapper) will satisfy this protocol.
 
 from __future__ import annotations
 
+from enum import Enum
 from typing import Any, Protocol, runtime_checkable
 
 
@@ -32,3 +33,9 @@ class MXMConfig(Protocol):
 
     # Item access: cfg["foo"]
     def __getitem__(self, key: str) -> Any: ...
+
+
+class DefaultsMode(str, Enum):
+    seed = "seed"  # copy from a source directory (repo seeds)
+    shipped = "shipped"  # copy from an installed package (importlib.resources)
+    empty = "empty"  # create dirs/sentinels only
