@@ -24,6 +24,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - _Nothing yet._
 
 ---
+## [0.5.1] — 2026-01-14
+### Fixed
+- **Packaging:** Relaxed `click` dependency constraint to allow `8.2.x`, restoring compatibility with
+  `mxm-secrets` and downstream packages such as `mxm-dataio`.
 
 ## [0.5.0] — 2025-11-10
 ### Added
