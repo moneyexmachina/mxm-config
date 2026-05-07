@@ -3,12 +3,12 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterator
 import re
+from collections.abc import Iterator
 from typing import Any, Final, cast
 
-from omegaconf import OmegaConf
 import pytest
+from omegaconf import OmegaConf
 
 # Import only the public API.
 # We test private helpers indirectly via behaviour.

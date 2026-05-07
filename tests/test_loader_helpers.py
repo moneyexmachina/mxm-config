@@ -1,8 +1,8 @@
 from pathlib import Path
 from typing import Any
 
-from omegaconf import DictConfig, OmegaConf
 import pytest
+from omegaconf import DictConfig, OmegaConf
 
 from mxm.config.loader import _load_block  # pyright: ignore[reportPrivateUsage]
 from mxm.config.resolver import resolve_environment, resolve_machine, resolve_profile

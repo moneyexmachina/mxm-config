@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
-## [Unreleased]
+## Unreleased
 ### Added
 - _Nothing yet._
 
@@ -24,6 +24,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - _Nothing yet._
 
 ---
+## [0.5.2] — 2026-05-07
+
+### Changed
+- Upgraded Python target version to **3.13**.
+- Updated project structure and configuration to comply with `mxm-foundry` package policy:
+  - Adopted PEP 420 namespace package layout (`src/mxm` without `__init__.py`)
+  - Updated Poetry package declaration to use MXM namespace root:
+    - `packages = [{ include = "mxm", from = "src" }]`
+- Aligned tooling configuration with MXM canonical defaults:
+  - Simplified `ruff` configuration (removed non-canonical `exclude`)
+  - Simplified `isort` configuration to canonical MXM settings
+
+### Fixed
+- Ensured full compliance with `mxm-foundry check` across:
+  - filesystem structure
+  - `pyproject.toml` configuration
+  - formatting and typing policy
+  - documentation requirements (`README.md`, `CHANGELOG.md`)
+
+### Documentation
+- Updated `README.md` to conform to MXM documentation policy:
+  - Added required sections: `## Installation`, `## Usage`, `## Development`
+  - Standardised development workflow around `make check`
+
+### Notes
+- No changes to public API or runtime behaviour.
+- This release is a structural and tooling compliance update enabling consistent integration across the MXM package ecosystem.
+
 ## [0.5.1] — 2026-01-14
 ### Fixed
 - **Packaging:** Relaxed `click` dependency constraint to allow `8.2.x`, restoring compatibility with

@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from collections.abc import Iterable, Iterator
 import importlib
-from importlib import resources
-from pathlib import Path
 import shutil
 import warnings
+from collections.abc import Iterable, Iterator
+from importlib import resources
+from pathlib import Path
 
 from mxm.config.ids import validate_app_id
 from mxm.config.reports import InstalledFile, InstallReport

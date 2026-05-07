@@ -75,9 +75,9 @@ from mxm.config.init_resolvers import register_mxm_resolvers
 from mxm.config.installer import (
     DefaultsMode,
     InstallReport,
+    install_all,
     install_config,
 )
-from mxm.config.installer import install_all  # deprecated alias, still exported for now
 from mxm.config.loader import load_config
 from mxm.config.types import MXMConfig
 

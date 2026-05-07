@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "mxm-config"
-version = "0.5.1"
+version = "0.5.2"
 description = "MXM configuration loader and context resolver"
 authors = ["mxm <contact@moneyexmachina.com>"]
 license = "MIT"
@@ -26,7 +26,7 @@ include = [
 "Repository" = "https://github.com/moneyexmachina/mxm-config"
 "Issues" = "https://github.com/moneyexmachina/mxm-config/issues"
 [tool.poetry.dependencies]
-python = ">=3.12,<4.0"
+python = ">=3.13,<4.0"
 omegaconf = ">=2.3.0,<3.0.0"
 typer = ">=0.16,<1.0"
 click = ">=8.1.6"
@@ -46,15 +46,7 @@ mxm-config = "mxm.config.cli:app"
 [build-system]
 requires = ["poetry-core>=2.0.0"]
 build-backend = "poetry.core.masonry.api"
-
-[tool.ruff]
-line-length = 88
-target-version = "py313"
-exclude = ["build", "dist", ".venv"]
-
-[tool.ruff.lint]
-select = ["E","F","B","UP","C90","RUF"]
-ignore = ["E203","E501", "I001", "I002"]
+# ---- Tooling (package-local, MXM defaults) ----
 [tool.black]
 line-length = 88
 target-version = ["py313"]
@@ -63,15 +55,20 @@ target-version = ["py313"]
 profile = "black"
 line_length = 88
 known_first_party = ["mxm"]
-known_third_party = ["omegaconf"]
 combine_as_imports = true
-force_sort_within_sections = true
-lines_between_types = 1
+
+[tool.ruff]
+line-length = 88
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E","F","I","B","UP","C90","RUF"]
+ignore = ["E203","E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["mxm"]
 
 [tool.pytest.ini_options]
 addopts = "-q"
 pythonpath = ["src"]
-filterwarnings = [
-  # Silence the legacy alias deprecation everywhere by default (stacklevel points to caller)
-  "ignore:.*install_all is deprecated.*:DeprecationWarning"
-]
+
