@@ -24,6 +24,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - _Nothing yet._
 
 ---
+## [0.6.0] - 2026-06-05
+
+### Added
+
+- Added RuntimeIdentity-driven configuration resolution.
+- Added support for external configuration stores.
+- Added `substrate.yaml` and `role.yaml` configuration layers.
+- Added `show-config` CLI command for configuration inspection.
+- Added comprehensive loader and CLI test coverage.
+
+### Changed
+
+- Reworked configuration resolution around RuntimeIdentity.
+- Simplified package responsibilities to configuration resolution only.
+- Updated configuration store structure to:
+
+  ```
+  apps/<app_id>/
+      default.yaml
+      environment.yaml
+      machine.yaml
+      substrate.yaml
+      role.yaml
+  ```
+
+- Rewrote package documentation and examples.
+- Replaced profile-based configuration selection with role-based selection.
+
+### Removed
+
+- Removed configuration installation functionality.
+- Removed seed-based and shipped-default installation models.
+- Removed `install_config`.
+- Removed deprecated `install_all`.
+- Removed `DefaultsMode`.
+- Removed `InstallReport`.
+- Removed ownership of `~/.config/mxm`.
+- Removed `local.yaml` from the configuration model.
+- Removed runtime discovery and resolver functionality.
+
 ## [0.5.2] — 2026-05-07
 
 ### Changed
