@@ -7,9 +7,13 @@
 
 ## Purpose
 
-`mxm-config` provides a unified way to **install, load, layer, and resolve configuration** across all Money Ex Machina (MXM) packages and applications.
+`mxm-config` provides deterministic configuration resolution for Money Ex Machina (MXM) applications.
 
-It separates configuration from secrets and runtime metadata, enforces deterministic layering, and ensures every run has a transparent, reproducible view of its operating context.
+It resolves configuration from an external configuration store using a `RuntimeIdentity`, applies a fixed layering model, and returns a transparent and reproducible configuration view for the running application.
+
+`mxm-config` is responsible for configuration resolution only.
+
+It does not manage secrets, discover runtime identity, or own configuration storage.
 
 ## Installation
 
@@ -19,69 +23,117 @@ pip install mxm-config
 
 ## Usage
 
-### Installing configuration
-
-```python
-from mxm.config import install_config, DefaultsMode
-
-install_config(
-    app_id="demo",
-    mode=DefaultsMode.shipped,
-    shipped_package="mxm.config._data.seeds",
-)
-```
-
 ### Loading configuration
 
 ```python
-from mxm.config import load_config
+from pathlib import Path
 
-cfg = load_config(package="demo", env="dev", profile="research")
+from mxm.config import load_config
+from mxm.types import RuntimeIdentity
+
+identity = RuntimeIdentity(
+    app="mxm-moneymachine",
+    environment="dev",
+    machine="bridge",
+    substrate="local-process",
+    role="marketdata",
+)
+
+cfg = load_config(
+    identity=identity,
+    store_root=Path("~/mxm-config-store").expanduser(),
+)
 
 print(cfg.parameters.refresh_interval)
 print(cfg.paths.output)
 ```
 
-### CLI usage
+### Using the default config store
 
-```bash
-mxm-config install-config --app-id demo --mode shipped --pkg mxm.config
+```python
+from mxm.config import load_config
+
+cfg = load_config(identity=identity)
+```
+
+By default, `mxm-config` resolves configuration from:
+
+```text
+~/mxm-config-store
 ```
 
 ## Design Principles
 
-- **Separation of concerns**  
-  Configuration ≠ secrets ≠ runtime  
-  Secrets are handled by `mxm-secrets`  
-  Runtime metadata will be handled by `mxm-runtime` (planned)
+### Separation of Concerns
 
-- **Determinism**  
-  Fixed layering order  
-  Reproducible resolution
+Configuration, secrets, and runtime identity are separate concerns.
 
-- **Transparency**  
-  Plain YAML files  
-  Explicit merge order
+```text
+mxm-runtime
+    discovers RuntimeIdentity
 
-- **Extensibility**  
-  Orthogonal layers  
-  Package-level defaults
+mxm-config
+    resolves configuration
 
-## The App-Owned Config Root
-
-Every MXM application owns a configuration directory:
-
-```
-~/.config/mxm/<app_id>/
+mxm-secrets
+    resolves secrets
 ```
 
-This is the single source of truth for runtime configuration.
+### Determinism
 
-Override with:
+Configuration resolution follows a fixed precedence order.
 
-```bash
-export MXM_CONFIG_HOME=/custom/path
+The same `RuntimeIdentity` and configuration store will always produce the same resolved configuration.
+
+### Transparency
+
+Configuration is stored as plain YAML files.
+
+Layer selection and merge order are explicit and inspectable.
+
+### Composability
+
+Each configuration layer expresses a single concern.
+
+Applications compose behavior through layering rather than duplication.
+
+## Configuration Store
+
+`mxm-config` resolves configuration from an external configuration store.
+
+The configuration store is the authoritative source of configuration data.
+
+A typical store layout is:
+
+```text
+mxm-config-store/
+└── apps/
+    └── <app_id>/
+        ├── default.yaml
+        ├── environment.yaml
+        ├── machine.yaml
+        ├── substrate.yaml
+        └── role.yaml
 ```
+
+The configuration store contains configuration data only.
+
+Configuration resolution semantics belong to `mxm-config`.
+
+## Runtime Identity
+
+Configuration selection is driven by a `RuntimeIdentity`.
+
+```text
+RuntimeIdentity
+├── app
+├── environment
+├── machine
+├── substrate
+└── role
+```
+
+Each identity dimension selects a configuration layer from the store.
 
 ## Configuration Layers
 
@@ -90,37 +142,53 @@ Configuration is resolved by merging the following layers (lowest → highest pr
 1. `default.yaml`
 2. `environment.yaml`
 3. `machine.yaml`
-4. `profile.yaml`
-5. `local.yaml`
+4. `substrate.yaml`
+5. `role.yaml`
 6. explicit overrides
 
-## Installing Configs (Python API)
+For a runtime identity:
 
-```python
-from mxm.config import install_config, DefaultsMode
-from importlib.resources import as_file, files
-
-install_config(
-    app_id="demo",
-    mode=DefaultsMode.shipped,
-    shipped_package="mxm.config._data.seeds",
-)
-
-with as_file(files("mxm.config._data") / "seeds") as p:
-    install_config(app_id="demo", mode=DefaultsMode.seed, seed_root=p)
-
-install_config(app_id="demo", mode=DefaultsMode.empty)
+```text
+app         = mxm-moneymachine
+environment = dev
+machine     = bridge
+substrate   = local-process
+role        = marketdata
 ```
 
-Returns an `InstallReport` describing all actions taken.
+the resolver selects:
 
-### Install Modes
+```text
+default.yaml
+environment.yaml["dev"]
+machine.yaml["bridge"]
+substrate.yaml["local-process"]
+role.yaml["marketdata"]
+```
 
-| Mode | Description |
-|------|-------------|
-| `shipped` | Install packaged defaults |
-| `seed` | Install from local filesystem |
-| `empty` | Create empty config root |
+and merges them in order.
+
+## Python API
+
+### Loading configuration
+
+```python
+cfg = load_config(
+    identity=identity,
+    store_root=Path("~/mxm-config-store"),
+)
+```
+
+### Explicit overrides
+
+```python
+cfg = load_config(
+    identity=identity,
+    overrides={
+        "parameters.refresh_interval": 60,
+    },
+)
+```
 
 ## Command-Line Interface
 
@@ -131,21 +199,13 @@ mxm-config --help
 Example:
 
 ```bash
-mxm-config install-config \
-  --app-id demo \
-  --mode shipped \
-  --pkg mxm.config
+mxm-config show-config \
+  --app mxm-moneymachine \
+  --environment dev \
+  --machine bridge \
+  --substrate local-process \
+  --role marketdata
 ```
-
-## Shipped Defaults
-
-Default configuration files are located in:
-
-```
-src/mxm/config/_data/seeds/
-```
-
-These are bundled with the package and used for both runtime defaults and testing.
 
 ## Development
 
@@ -167,15 +227,17 @@ This runs:
 make test
 ```
 
-Tests run in isolated temporary directories and never touch real user configuration.
+Tests run in isolated temporary directories and use temporary configuration stores.
 
 ## Roadmap
 
-- Schema validation (`omegaconf.structured`, `pydantic`)
-- Environment variable overrides
-- Integration with `mxm-runtime`
-- Configuration hashing and provenance tracking
+- Schema validation
+- Configuration provenance reporting
+- Configuration hashing
+- Layer introspection and diagnostics
+- RuntimeContext integration
 
 ## License
 
 MIT License. See [LICENSE](LICENSE).
+

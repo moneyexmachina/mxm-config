@@ -1,168 +1,294 @@
+"""RuntimeIdentity-driven configuration loading for MXM applications.
+
+`mxm-config` resolves application configuration from an external configuration
+store. The store contains configuration data; this module owns the resolution
+semantics.
+
+The public loader takes a `RuntimeIdentity`, selects the corresponding
+configuration layers from the store, merges them in deterministic precedence
+order, resolves OmegaConf interpolations, and returns a read-only configuration
+object.
+
+Resolution order, lowest to highest precedence:
+
+1. `default.yaml`
+2. `environment.yaml[identity.environment]`
+3. `machine.yaml[identity.machine]`
+4. `substrate.yaml[identity.substrate]`
+5. `role.yaml[identity.role]`
+6. explicit overrides
+
+The default configuration store root is:
+
+```text
+~/mxm-config-store
+```
+
+`mxm-config` does not discover runtime identity and does not manage secrets.
 """
-Configuration loader for MXM apps (layered OmegaConf).
 
-This module composes the final, read-only configuration object for a given
-`package` by merging a standard set of YAML layers located under the MXM
-config root (e.g., `~/.config/mxm/<package>`). Layering order is stable and
-well-defined (low → high precedence):
+from __future__ import annotations
 
-  1) default.yaml               — always applied if present
-  2) environment.yaml[env]      — the block matching the resolved environment
-  3) machine.yaml[machine]      — the block matching the resolved machine/host
-  4) profile.yaml[profile]      — the block matching the resolved profile
-  5) local.yaml                 — optional, for developer overrides
-  6) overrides (in-memory)      — explicit dict passed to `load_config(...)`
-
-Resolution helpers in `mxm_config.resolver` normalize `env`, `profile`, and
-`machine` (e.g., deriving defaults from environment variables or hostname).
-
-The resulting OmegaConf DictConfig is:
-  - fully resolved (interpolations evaluated),
-  - merged according to the order above,
-  - and set to read-only.
-
-Downstream packages should generally import `load_config` via
-`mxm_config.__init__` and type against the `MXMConfig` protocol instead of
-depending on OmegaConf directly.
-"""
-
-from collections.abc import Callable, Mapping
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any, cast
 
 from omegaconf import DictConfig, ListConfig, OmegaConf
 
-from mxm.config.resolver import (
-    get_config_root,
-    resolve_environment,
-    resolve_machine,
-    resolve_profile,
-)
 from mxm.config.types import MXMConfig
+from mxm.types import RuntimeIdentity
 
-Layer = ListConfig | DictConfig
+DEFAULT_CONFIG_STORE_ROOT = Path.home() / "mxm-config-store"
+"""Default local path to the authoritative MXM configuration store."""
+
+Layer = DictConfig | ListConfig
+"""OmegaConf layer type accepted by `OmegaConf.merge`."""
 
 
 def load_config(
-    package: str,
-    env: str,
-    profile: str,
-    machine: str | None = None,
-    root: Path | None = None,
+    *,
+    identity: RuntimeIdentity,
+    store_root: Path = DEFAULT_CONFIG_STORE_ROOT,
     overrides: Mapping[str, Any] | None = None,
 ) -> MXMConfig:
+    """Load and resolve configuration for a runtime identity.
+
+    Parameters
+    ----------
+    identity
+        Runtime identity selecting the application and identity-specific layers.
+    store_root
+        Root directory of the configuration store. Defaults to
+        `~/mxm-config-store`.
+    overrides
+        Optional explicit override mapping applied after all store layers.
+
+    Returns
+    -------
+    MXMConfig
+        A read-only OmegaConf-backed configuration object typed against the
+        lightweight `MXMConfig` protocol.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the application configuration root or `default.yaml` is missing.
+    KeyError
+        If a dimension file exists but does not contain the selected identity
+        value.
     """
-    Load the MXM configuration by composing layered YAML files.
+    app_root = _app_config_root(identity=identity, store_root=store_root)
 
-    The configuration directory is determined by combining the MXM config root
-    (``~/.config/mxm`` by default, or overridden by ``MXM_CONFIG_HOME``) and
-    the given ``package`` name (e.g. ``demo``). This directory is populated
-    when configs are installed using :func:`install_all`.
+    layers: list[Layer] = []
 
-    Layers are merged in the following order (lowest → highest precedence):
+    default_cfg = _load_required_yaml(app_root / "default.yaml")
+    layers.append(default_cfg)
 
-        1. ``default.yaml``          — always applied if present
-        2. ``environment.yaml``      — only the block matching ``env`` is applied
-        3. ``machine.yaml``          — only the block matching current hostname
-        4. ``profile.yaml``          — only the block matching ``profile``
-        5. ``local.yaml``            — applied if present
-        6. explicit overrides dict   — passed via ``overrides`` argument
-
-    Args:
-        package: Name of the config subdirectory under the MXM config root.
-        env: Environment selector (e.g. ``"dev"``, ``"prod"``).
-        profile: Profile selector (e.g. ``"default"``, ``"research"``).
-        machine: Optional explicit machine name override.
-        root: Optional config root path override.
-        overrides: Optional dictionary of overrides applied last.
-
-    Returns:
-        OmegaConf: A frozen OmegaConf config object with all layers
-        merged and interpolated.
-    """
-    base_root = Path(root) if root is not None else get_config_root()
-    cfg_root = base_root / Path(str(package))
-
-    context_cfg = OmegaConf.create(
-        {
-            "mxm_env": resolve_environment(env),
-            "mxm_profile": resolve_profile(profile),
-            "mxm_machine": resolve_machine(machine),
-        }
+    environment_cfg = _load_selected_block(
+        path=app_root / "environment.yaml",
+        selector=str(identity.environment),
+        dimension="environment",
     )
-    layers: list[Layer] = [context_cfg]
+    if environment_cfg is not None:
+        layers.append(environment_cfg)
 
-    default_cfg = _load_yaml_if_exists(cfg_root / "default.yaml")
-    if default_cfg:
-        layers.append(default_cfg)
-
-    env_cfg = _load_block(env, cfg_root / "environment.yaml", resolve_environment)
-    if env_cfg:
-        layers.append(env_cfg)
-
-    machine_cfg = _load_block(machine, cfg_root / "machine.yaml", resolve_machine)
-    if machine_cfg:
+    machine_cfg = _load_selected_block(
+        path=app_root / "machine.yaml",
+        selector=str(identity.machine),
+        dimension="machine",
+    )
+    if machine_cfg is not None:
         layers.append(machine_cfg)
 
-    profile_cfg = _load_block(
-        profile, cfg_root / "profile.yaml", resolve_profile, allow_default_skip=True
+    substrate_cfg = _load_selected_block(
+        path=app_root / "substrate.yaml",
+        selector=str(identity.substrate),
+        dimension="substrate",
     )
-    if profile_cfg:
-        layers.append(profile_cfg)
+    if substrate_cfg is not None:
+        layers.append(substrate_cfg)
 
-    local_cfg = _load_yaml_if_exists(cfg_root / "local.yaml")
-    if local_cfg:
-        layers.append(local_cfg)
+    role_cfg = _load_selected_block(
+        path=app_root / "role.yaml",
+        selector=str(identity.role),
+        dimension="role",
+    )
+    if role_cfg is not None:
+        layers.append(role_cfg)
 
     if overrides is not None:
         overrides_cfg: DictConfig = OmegaConf.create(dict(overrides))
         layers.append(overrides_cfg)
 
-    merged: DictConfig = OmegaConf.merge(*layers)  # type: ignore[assignment]
+    merged: DictConfig = OmegaConf.merge(
+        *layers
+    )  # pyright: ignore[reportAssignmentType]
     OmegaConf.resolve(merged)
     OmegaConf.set_readonly(merged, True)
+
     return cast(MXMConfig, merged)
 
 
-def _load_block(
-    selector: str | None,
-    path: Path,
-    resolver: Callable[[str | None], str],
-    allow_default_skip: bool = False,
-) -> DictConfig | None:
+def _app_config_root(*, identity: RuntimeIdentity, store_root: Path) -> Path:
+    """Return and validate the app-specific configuration root.
+
+    The config store is organized as:
+
+    ```text
+    <store_root>/apps/<identity.app>/
+    ```
+
+    Parameters
+    ----------
+    identity
+        Runtime identity whose app field selects the app configuration root.
+    store_root
+        Root directory of the external configuration store.
+
+    Returns
+    -------
+    Path
+        App-specific configuration directory.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the app-specific configuration directory does not exist.
     """
-    Resolve and load a configuration block from a YAML file.
+    app_root = store_root.expanduser() / "apps" / str(identity.app)
+    if not app_root.is_dir():
+        raise FileNotFoundError(
+            "Application configuration root not found: "
+            f"{app_root}. Expected <store_root>/apps/{identity.app}/."
+        )
 
-    Args:
-        selector: Raw selector value (e.g. env, profile, machine).
-        path: Path to the YAML file.
-        resolver: Function to normalize the selector.
-        allow_default_skip: If True, missing "default" selector will return None
-            instead of raising KeyError (used for profiles).
+    return app_root
 
-    Returns:
-        DictConfig block for the selector, or None if skipped.
 
-    Raises:
-        KeyError: If YAML exists but selector not defined.
+def _load_required_yaml(path: Path) -> DictConfig:
+    """Load a required YAML file as an OmegaConf DictConfig.
+
+    Parameters
+    ----------
+    path
+        YAML file path.
+
+    Returns
+    -------
+    DictConfig
+        Loaded YAML configuration.
+
+    Raises
+    ------
+    FileNotFoundError
+        If `path` does not exist.
+    TypeError
+        If the YAML root is not a mapping.
     """
-    resolved = resolver(selector)
+    if not path.is_file():
+        raise FileNotFoundError(f"Required configuration file not found: {path}")
 
+    cfg = OmegaConf.load(path)
+    if not isinstance(cfg, DictConfig):
+        raise TypeError(f"Configuration file must contain a mapping: {path}")
+
+    return cfg
+
+
+def _load_optional_yaml(path: Path) -> DictConfig | None:
+    """Load an optional YAML mapping file if present.
+
+    Parameters
+    ----------
+    path
+        YAML file path.
+
+    Returns
+    -------
+    DictConfig | None
+        Loaded mapping config, or `None` if the file does not exist.
+
+    Raises
+    ------
+    TypeError
+        If the YAML file exists but its root is not a mapping.
+    """
     if not path.exists():
         return None
 
-    cfg: DictConfig = OmegaConf.load(path)  # type: ignore[assignment]
+    cfg = OmegaConf.load(path)
+    if not isinstance(cfg, DictConfig):
+        raise TypeError(f"Configuration file must contain a mapping: {path}")
 
-    if resolved in cfg:
-        return cfg[resolved]  # type: ignore[index]
-    elif allow_default_skip and resolved == "default":
+    return cfg
+
+
+def _load_selected_block(
+    *,
+    path: Path,
+    selector: str,
+    dimension: str,
+) -> DictConfig | None:
+    """Load a selected block from a dimension configuration file.
+
+    Dimension files are optional. If the file is absent, the layer is skipped.
+
+    If a dimension file exists, it must contain a top-level key matching the
+    selected identity value. The selected block must be a mapping.
+
+    Example
+    -------
+
+    For:
+
+    ```text
+    identity.environment = "dev"
+    ```
+
+    `environment.yaml` is expected to contain:
+
+    ```yaml
+    dev:
+      ...
+    ```
+
+    Parameters
+    ----------
+    path
+        Dimension YAML file path.
+    selector
+        Selected RuntimeIdentity value for the dimension.
+    dimension
+        Human-readable dimension name used in error messages.
+
+    Returns
+    -------
+    DictConfig | None
+        Selected configuration block, or `None` if the file is absent.
+
+    Raises
+    ------
+    KeyError
+        If the file exists but does not contain the selector.
+    TypeError
+        If the file or selected block is not a mapping.
+    """
+    cfg = _load_optional_yaml(path)
+    if cfg is None:
         return None
-    else:
+
+    if selector not in cfg:
+        available = ", ".join(str(key) for key in cfg.keys())
         raise KeyError(
-            f"Selector '{resolved}' not found in {path}. Available: {list(cfg.keys())}"
+            f"Selector {selector!r} for dimension {dimension!r} not found in "
+            f"{path}. Available selectors: {available}"
         )
 
+    selected = cfg[selector]
+    if not isinstance(selected, DictConfig):
+        raise TypeError(
+            f"Selected block for dimension {dimension!r} and selector "
+            f"{selector!r} in {path} must be a mapping."
+        )
 
-def _load_yaml_if_exists(path: Path):
-    """Load a YAML file into an OmegaConf config if it exists, else return None."""
-    return OmegaConf.load(path) if path.exists() else None
+    return selected

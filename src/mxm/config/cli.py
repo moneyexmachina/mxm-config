@@ -1,30 +1,33 @@
-"""
-mxm-config CLI
+"""Command-line interface for mxm-config.
 
-Thin, dependable CLI for installing *app-owned* MXM configuration
-into the user's config root (default: ~/.config/mxm).
+The CLI exposes configuration resolution and inspection utilities.
 
-Commands
---------
-- mxm-config --version
-- mxm-config install-config --app-id <APP_ID> [--mode shipped|seed|empty]
-    [--pkg <PKG>] [--seed-root <PATH>] [--dest-root <PATH>] [--overwrite] [--json]
+It does not install configuration, discover runtime identity, construct runtime
+context, or manage secrets.
 """
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
+from typing import Annotated
 
 import typer
+from omegaconf import DictConfig, OmegaConf
 
 from mxm.config._version import __version__
-from mxm.config.ids import validate_app_id
-from mxm.config.installer import DefaultsMode, install_config
+from mxm.config.loader import DEFAULT_CONFIG_STORE_ROOT, load_config
+from mxm.types import (
+    AppId,
+    Environment,
+    MachineId,
+    RuntimeIdentity,
+    RuntimeRole,
+    RuntimeSubstrate,
+)
 
 app = typer.Typer(
     add_completion=False,
-    help="mxm-config — app-owned configuration installer",
+    help="mxm-config — RuntimeIdentity-driven configuration resolver",
     no_args_is_help=True,
 )
 
@@ -35,116 +38,110 @@ def _main(  # pyright: ignore[reportUnusedFunction]
         False,
         "--version",
         "-V",
-        is_flag=True,
         is_eager=True,
         help="Show version and exit.",
     ),
 ) -> None:
-    """Top-level flags (currently just --version)."""
+    """Handle top-level CLI flags."""
     if version:
         typer.echo(__version__)
         raise typer.Exit(0)
 
 
-def _echo_err(msg: str) -> None:
-    typer.echo(msg, err=True)
+def _echo_err(message: str) -> None:
+    """Write an error message to stderr."""
+    typer.echo(message, err=True)
 
 
-@app.command("install-config")
-def cmd_install_config(
+def _build_identity(
+    *,
+    app_id: str,
+    environment: str,
+    machine: str,
+    substrate: str,
+    role: str,
+) -> RuntimeIdentity:
+    """Build a RuntimeIdentity from CLI strings."""
+    return RuntimeIdentity(
+        app=AppId(app_id),
+        environment=Environment(environment),
+        machine=MachineId(machine),
+        substrate=RuntimeSubstrate(substrate),
+        role=RuntimeRole(role),
+    )
+
+
+@app.command("show-config")
+def cmd_show_config(
     app_id: str = typer.Option(
         ...,
-        "--app-id",
-        help="Application identifier; installs under ~/.config/mxm/<app_id>/",
+        "--app",
+        help="Application identifier.",
         metavar="APP_ID",
     ),
-    mode: str = typer.Option(
-        "shipped",
-        "--mode",
-        help="Installation mode: shipped | seed | empty",
-        metavar="MODE",
+    environment: str = typer.Option(
+        ...,
+        "--environment",
+        "--env",
+        help="Runtime environment selector.",
+        metavar="ENVIRONMENT",
     ),
-    pkg: str | None = typer.Option(
-        None,
-        "--pkg",
-        help="Python package that ships defaults (required for --mode shipped).",
-        metavar="PKG",
+    machine: str = typer.Option(
+        ...,
+        "--machine",
+        help="Machine identifier selector.",
+        metavar="MACHINE",
     ),
-    seed_root: str | None = typer.Option(
-        None,
-        "--seed-root",
-        help="Path to the *per-app* seeds folder (…/_data/seeds/<app_id>/) for --mode seed.",
-        metavar="PATH",
+    substrate: str = typer.Option(
+        ...,
+        "--substrate",
+        help="Runtime substrate selector.",
+        metavar="SUBSTRATE",
     ),
-    dest_root: str | None = typer.Option(
-        None,
-        "--dest-root",
-        help="Override config root (defaults to ~/.config/mxm).",
-        metavar="PATH",
+    role: str = typer.Option(
+        ...,
+        "--role",
+        help="Runtime role selector.",
+        metavar="ROLE",
     ),
-    overwrite: bool = typer.Option(
-        False, "--overwrite", help="Overwrite existing files."
+    store_root: Annotated[
+        Path,
+        typer.Option(
+            "--store-root",
+            help="Configuration store root.",
+            metavar="PATH",
+        ),
+    ] = DEFAULT_CONFIG_STORE_ROOT,
+    resolve: bool = typer.Option(
+        True,
+        "--resolve/--no-resolve",
+        help="Print resolved OmegaConf output.",
     ),
-    no_sentinel: bool = typer.Option(
-        False, "--no-sentinel", help="Skip creating '.initialized' in empty mode."
-    ),
-    json_out: bool = typer.Option(False, "--json", help="Print InstallReport as JSON."),
 ) -> None:
-    """Install default configuration into ~/.config/mxm/<app_id>/."""
-    # Validate app_id early
+    """Resolve and print configuration for an explicit RuntimeIdentity."""
+    identity = _build_identity(
+        app_id=app_id,
+        environment=environment,
+        machine=machine,
+        substrate=substrate,
+        role=role,
+    )
+
     try:
-        validate_app_id(app_id)
-    except ValueError as e:
-        _echo_err(f"error: {e}")
-        raise typer.Exit(1) from None
-
-    # Map mode (string) -> enum
-    key = mode.lower().strip()
-    mode_map = {
-        "shipped": DefaultsMode.shipped,
-        "seed": DefaultsMode.seed,
-        "empty": DefaultsMode.empty,
-    }
-    if key not in mode_map:
-        _echo_err("error: --mode must be one of: shipped, seed, empty")
-        raise typer.Exit(1)
-    mode_enum = mode_map[key]
-
-    # Cross-flag validation
-    if mode_enum is DefaultsMode.seed and seed_root is None:
-        _echo_err("error: --seed-root is required when --mode seed")
-        raise typer.Exit(1)
-    if mode_enum is DefaultsMode.shipped and not pkg:
-        _echo_err("error: --pkg is required when --mode shipped")
-        raise typer.Exit(1)
-
-    # Convert paths from strings (keep CLI surface plain strings to avoid Click type quirks)
-    seed_root_path = Path(seed_root) if seed_root else None
-    dest_root_path = Path(dest_root) if dest_root else None
-
-    # Execute
-    try:
-        report = install_config(
-            app_id=app_id,
-            mode=mode_enum,
-            shipped_package=pkg,
-            seed_root=seed_root_path,
-            dest_root=dest_root_path,
-            overwrite=overwrite,
-            create_sentinel=not no_sentinel,
+        cfg = load_config(
+            identity=identity,
+            store_root=store_root.expanduser(),
         )
     except Exception as exc:
         _echo_err(f"error: {exc}")
-        raise typer.Exit(2) from None
+        raise typer.Exit(1) from None
 
-    # Output
-    if json_out:
-        typer.echo(json.dumps(report.to_dict(), indent=2))
-    else:
-        pretty = getattr(report, "pretty", None)
-        typer.echo(pretty() if callable(pretty) else str(report))
+    if not isinstance(cfg, DictConfig):
+        _echo_err("error: resolved configuration is not an OmegaConf DictConfig")
+        raise typer.Exit(2)
 
-    raise typer.Exit(0)
+    output = OmegaConf.to_yaml(cfg, resolve=resolve)
+    typer.echo(output)
 
 
 if __name__ == "__main__":
