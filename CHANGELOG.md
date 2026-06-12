@@ -24,7 +24,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - _Nothing yet._
 
 ---
+## [0.6.2] - 2026-06-12
 
+### Added
+
+- Added `to_config_data(...)` helper for converting `MXMConfig` objects into plain JSON-shaped configuration data.
+- Added test coverage for:
+  - conversion of OmegaConf-backed configurations,
+  - nested configuration structures,
+  - interpolation resolution,
+  - invalid input handling.
+
+### Architecture
+
+`mxm-config` now provides an explicit boundary between:
+
+```text
+OmegaConf-backed configuration objects
+```
+
+and:
+
+```text
+plain configuration data
+```
+
+This enables downstream packages to consume configuration without depending on OmegaConf implementation details.
+
+The intended flow is:
+
+```text
+load_config(...)
+    ↓
+make_view(...)
+    ↓
+to_config_data(...)
+    ↓
+downstream package
+```
+
+### Internal
+
+- Clarified ownership of configuration serialization within `mxm-config`.
+- Preserved the `MXMConfig` protocol abstraction while enabling materialisation workflows in dependent packages.
+
+### Compatibility
+
+No configuration format changes.
+
+No breaking API changes.
+
+This release adds the conversion helper required for RuntimeContext materialisation work in `mxm-runtime`.
 ## [0.6.1] - 2026-06-12
 
 ### Changed

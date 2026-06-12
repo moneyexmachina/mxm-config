@@ -30,6 +30,7 @@ Exports
 - `load_config`    : Resolve configuration for a `RuntimeIdentity`.
 - `make_subconfig` : Construct a config object from a plain mapping.
 - `make_view`      : Return a focused read-only subtree of a resolved config.
+- `to_config_data` : Convert an MXMConfig object into plain JSON-shaped configuration data.
 - `__version__`    : Package version.
 
 Quick start
@@ -70,7 +71,7 @@ Notes
 from __future__ import annotations
 
 from mxm.config._version import __version__
-from mxm.config.helpers import make_subconfig, make_view
+from mxm.config.helpers import make_subconfig, make_view, to_config_data
 from mxm.config.loader import load_config
 from mxm.config.types import MXMConfig
 
@@ -80,4 +81,5 @@ __all__ = [
     "load_config",
     "make_subconfig",
     "make_view",
+    "to_config_data",
 ]

@@ -9,7 +9,8 @@ Exports
     Construct a fresh config object from a plain Python mapping.
 - `make_view(cfg, path, *, readonly=True, resolve=False) -> MXMConfig`
     Return a focused, read-only view onto a subtree of an existing config.
-
+- `to_config_data(cfg) -> JSONMap`
+    Convert an MXMConfig object into plain JSON-shaped configuration data.
 Guidance
 --------
 Use `make_subconfig` when you need to *construct* a new config (e.g. in tests
@@ -23,9 +24,11 @@ access), backed by OmegaConf `DictConfig` under the hood and typed as `MXMConfig
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any
+from typing import Any, cast
 
 from omegaconf import DictConfig, OmegaConf
+
+from mxm.types import JSONMap
 
 from .types import MXMConfig
 
@@ -131,3 +134,40 @@ def make_view(
     if readonly:
         OmegaConf.set_readonly(view, True)
     return view
+
+
+def to_config_data(cfg: MXMConfig) -> JSONMap:
+    """Convert an MXMConfig view into plain JSON-shaped configuration data.
+
+    This helper provides the boundary between OmegaConf-backed configuration
+    objects and packages that consume plain configuration data.
+
+    Parameters
+    ----------
+    cfg
+        Configuration object produced by mxm-config.
+
+    Returns
+    -------
+    JSONMap
+        Plain nested Python dictionaries, lists, and scalar values suitable
+        for consumption by downstream packages.
+
+    Raises
+    ------
+    TypeError
+        If cfg is not an OmegaConf DictConfig.
+    """
+    if not isinstance(cfg, DictConfig):
+        raise TypeError("to_config_data expects an OmegaConf DictConfig (MXMConfig).")
+
+    data = OmegaConf.to_container(
+        cfg,
+        resolve=True,
+        enum_to_str=True,
+    )
+
+    if not isinstance(data, dict):
+        raise TypeError("to_config_data expects a mapping configuration root.")
+
+    return cast(JSONMap, data)
