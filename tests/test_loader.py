@@ -9,12 +9,7 @@ from omegaconf import DictConfig, OmegaConf
 
 from mxm.config.loader import load_config
 from mxm.types import (
-    AppId,
-    Environment,
-    MachineId,
     RuntimeIdentity,
-    RuntimeRole,
-    RuntimeSubstrate,
 )
 
 
@@ -27,11 +22,11 @@ def _identity(
     role: str = "marketdata",
 ) -> RuntimeIdentity:
     return RuntimeIdentity(
-        app=AppId(app),
-        environment=Environment(environment),
-        machine=MachineId(machine),
-        substrate=RuntimeSubstrate(substrate),
-        role=RuntimeRole(role),
+        app=app,
+        environment=environment,
+        machine=machine,
+        substrate=substrate,
+        role=role,
     )
 
 

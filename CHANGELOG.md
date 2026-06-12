@@ -24,6 +24,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - _Nothing yet._
 
 ---
+
+## [0.6.1] - 2026-06-12
+
+### Changed
+
+- Updated dependency on `mxm-types` to v0.3.1.
+- Adopted simplified `RuntimeIdentity` typing based on validated string identifiers.
+- Removed dependency on custom runtime identifier alias types previously used by:
+  - `app`
+  - `environment`
+  - `machine`
+  - `substrate`
+  - `role`
+
+### Architecture
+
+`mxm-config` now consumes the simplified `RuntimeIdentity` model introduced in `mxm-types` v0.3.1.
+
+Runtime identity dimensions continue to represent:
+
+```text
+app
+environment
+machine
+substrate
+role
+```
+
+but are now expressed directly as validated string identifiers rather than custom string-alias types.
+
+This reduces friction when constructing runtime identities from:
+
+```text
+runtime discovery
+configuration loading
+tests
+CLI tooling
+deployment infrastructure
+```
+
+while preserving the configuration resolution semantics of `mxm-config`.
+
+### Compatibility
+
+No configuration format changes.
+
+No public API changes.
+
+This release is a compatibility update aligning `mxm-config` with `mxm-types` v0.3.1.
+
 ## [0.6.0] - 2026-06-05
 
 ### Added

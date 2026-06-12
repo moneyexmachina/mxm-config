@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "mxm-config"
-version = "0.6.0"
+version = "0.6.1"
 description = "MXM configuration loader and context resolver"
 authors = ["mxm <contact@moneyexmachina.com>"]
 license = "MIT"
@@ -25,7 +25,7 @@ include = [
 "Repository" = "https://github.com/moneyexmachina/mxm-config"
 "Issues" = "https://github.com/moneyexmachina/mxm-config/issues"
 [tool.poetry.dependencies]
-mxm-types = ">=0.3.0, <0.4.0"
+mxm-types = ">=0.3.1, <0.4.0"
 python = ">=3.13,<3.15"
 omegaconf = ">=2.3.0,<3.0.0"
 typer = ">=0.16,<1.0"

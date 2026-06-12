@@ -284,14 +284,14 @@ files = [
 
 [[package]]
 name = "mxm-types"
-version = "0.3.0"
+version = "0.3.1"
 description = "Shared foundational types and representation adapters for Money Ex Machina."
 optional = false
 python-versions = "<3.15,>=3.13"
 groups = ["main"]
 files = [
-    {file = "mxm_types-0.3.0-py3-none-any.whl", hash = "sha256:cda94a4a7402a94320d9832b2a06b9750717028d828a373a10519222e5b8ceab"},
-    {file = "mxm_types-0.3.0.tar.gz", hash = "sha256:ace686f24d817798396622e51d1db954b4e32bb9c46282d11bc53e53b52c838b"},
+    {file = "mxm_types-0.3.1-py3-none-any.whl", hash = "sha256:80cee67824c93aaf90963b187fa3916a0aa34d4798094fc6b3644280ed9e4bfd"},
+    {file = "mxm_types-0.3.1.tar.gz", hash = "sha256:92055ad868c91cfed6229c1d2c82e9d5161ce926d1afcfb9ff82ce5d3ab2e749"},
 ]
 
 [package.dependencies]
@@ -987,4 +987,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13,<3.15"
-content-hash = "2869b16c86fdae3d55c4412fc66cff82be29829c82093a584464ba5a265d789f"
+content-hash = "60fed227fbbb7dd1938af7f446f2f4c75dd8e9f33a04643bfe48332c3e499c95"

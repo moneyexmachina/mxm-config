@@ -17,12 +17,7 @@ from omegaconf import DictConfig, OmegaConf
 from mxm.config._version import __version__
 from mxm.config.loader import DEFAULT_CONFIG_STORE_ROOT, load_config
 from mxm.types import (
-    AppId,
-    Environment,
-    MachineId,
     RuntimeIdentity,
-    RuntimeRole,
-    RuntimeSubstrate,
 )
 
 app = typer.Typer(
@@ -51,24 +46,6 @@ def _main(  # pyright: ignore[reportUnusedFunction]
 def _echo_err(message: str) -> None:
     """Write an error message to stderr."""
     typer.echo(message, err=True)
-
-
-def _build_identity(
-    *,
-    app_id: str,
-    environment: str,
-    machine: str,
-    substrate: str,
-    role: str,
-) -> RuntimeIdentity:
-    """Build a RuntimeIdentity from CLI strings."""
-    return RuntimeIdentity(
-        app=AppId(app_id),
-        environment=Environment(environment),
-        machine=MachineId(machine),
-        substrate=RuntimeSubstrate(substrate),
-        role=RuntimeRole(role),
-    )
 
 
 @app.command("show-config")
@@ -119,8 +96,8 @@ def cmd_show_config(
     ),
 ) -> None:
     """Resolve and print configuration for an explicit RuntimeIdentity."""
-    identity = _build_identity(
-        app_id=app_id,
+    identity = RuntimeIdentity(
+        app=app_id,
         environment=environment,
         machine=machine,
         substrate=substrate,
