@@ -1,46 +1,37 @@
 name: CI
-
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  test:
-    name: Python (Poetry) — make check
+  check:
+    name: Python — make check
     runs-on: ubuntu-latest
 
+    env:
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+      POETRY_VIRTUALENVS_IN_PROJECT: "true"
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
-          python-version: '3.13'
+          python-version: "3.13"
 
-      - name: Install Poetry
-        uses: abatilo/actions-poetry@v2
+      - uses: abatilo/actions-poetry@v2
         with:
-          poetry-version: '1.8.3'
+          poetry-version: "2.2.1"
 
-      - name: Cache Poetry
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/pypoetry
-            ~/.cache/pip
-          key: poetry-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
-          restore-keys: |
-            poetry-${{ runner.os }}-
-
-      - name: Install deps
-        run: poetry install --sync
-
-      - name: make check
-        run: make check
+      - run: poetry install --sync --no-interaction --no-ansi
+      - run: make check
